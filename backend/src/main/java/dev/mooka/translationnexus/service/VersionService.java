@@ -1,9 +1,9 @@
 package dev.mooka.translationnexus.service;
 
-import dev.mooka.translationnexus.domain.AppVersion;
-import dev.mooka.translationnexus.domain.HistoryEntry;
-import dev.mooka.translationnexus.domain.TranslationDocument;
-import dev.mooka.translationnexus.domain.TranslationValue;
+import dev.mooka.translationnexus.domain.entity.AppVersionEntity;
+import dev.mooka.translationnexus.domain.entity.HistoryEntryEntity;
+import dev.mooka.translationnexus.domain.entity.TranslationEntity;
+import dev.mooka.translationnexus.domain.entity.TranslationValueEntity;
 import dev.mooka.translationnexus.exception.BusinessException;
 import dev.mooka.translationnexus.exception.impl.GenericBusinessException;
 import dev.mooka.translationnexus.repository.AppVersionRepository;
@@ -27,15 +27,15 @@ public class VersionService {
     private final AppVersionRepository appVersionRepository;
     private final TranslationRepository translationRepository;
 
-    public List<AppVersion> getAllVersions() {
+    public List<AppVersionEntity> getAllVersions() {
         return appVersionRepository.findAll();
     }
 
-    public Optional<AppVersion> getActiveVersion() {
+    public Optional<AppVersionEntity> getActiveVersion() {
         return appVersionRepository.findByActiveTrue();
     }
 
-    public AppVersion createVersion(String newVersionName) throws BusinessException {
+    public AppVersionEntity createVersion(String newVersionName) throws BusinessException {
         if (newVersionName == null || newVersionName.isBlank()) {
             throw new GenericBusinessException("Version name cannot be empty");
         }
@@ -45,7 +45,7 @@ public class VersionService {
         }
 
         // 1. Get current active version
-        AppVersion currentActive = appVersionRepository.findByActiveTrue()
+        AppVersionEntity currentActive = appVersionRepository.findByActiveTrue()
                 .orElse(null);
 
         // 2. Deactivate current active version
@@ -55,7 +55,7 @@ public class VersionService {
         }
 
         // 3. Create and activate the new version
-        AppVersion newActive = AppVersion.builder()
+        AppVersionEntity newActive = AppVersionEntity.builder()
                 .version(trimmedVersionName)
                 .active(true)
                 .createdAt(Instant.now())
@@ -64,18 +64,18 @@ public class VersionService {
 
         // 4. Clone all translation documents from old active version
         if (currentActive != null) {
-            List<TranslationDocument> oldDocs = translationRepository.findAll().stream()
+            List<TranslationEntity> oldDocs = translationRepository.findAll().stream()
                     .filter(doc -> currentActive.getVersion().equals(doc.getVersion()))
                     .toList();
 
-            List<TranslationDocument> clonedDocs = new ArrayList<>();
-            for (TranslationDocument doc : oldDocs) {
+            List<TranslationEntity> clonedDocs = new ArrayList<>();
+            for (TranslationEntity doc : oldDocs) {
                 // Clone translations map
-                Map<String, TranslationValue> clonedTranslations = new HashMap<>();
+                Map<String, TranslationValueEntity> clonedTranslations = new HashMap<>();
                 if (doc.getTranslations() != null) {
-                    for (Map.Entry<String, TranslationValue> entry : doc.getTranslations().entrySet()) {
-                        TranslationValue tv = entry.getValue();
-                        clonedTranslations.put(entry.getKey(), TranslationValue.builder()
+                    for (Map.Entry<String, TranslationValueEntity> entry : doc.getTranslations().entrySet()) {
+                        TranslationValueEntity tv = entry.getValue();
+                        clonedTranslations.put(entry.getKey(), TranslationValueEntity.builder()
                                 .translatedValue(tv.getTranslatedValue())
                                 .status(tv.getStatus())
                                 .lastModifiedBy(tv.getLastModifiedBy())
@@ -85,10 +85,10 @@ public class VersionService {
                 }
 
                 // Clone history list
-                List<HistoryEntry> clonedHistory = new ArrayList<>();
+                List<HistoryEntryEntity> clonedHistory = new ArrayList<>();
                 if (doc.getHistory() != null) {
-                    for (HistoryEntry he : doc.getHistory()) {
-                        clonedHistory.add(HistoryEntry.builder()
+                    for (HistoryEntryEntity he : doc.getHistory()) {
+                        clonedHistory.add(HistoryEntryEntity.builder()
                                 .locale(he.getLocale())
                                 .modifiedBy(he.getModifiedBy())
                                 .previousValue(he.getPreviousValue())
@@ -99,7 +99,7 @@ public class VersionService {
                     }
                 }
 
-                TranslationDocument clonedDoc = TranslationDocument.builder()
+                TranslationEntity clonedDoc = TranslationEntity.builder()
                         .keyCode(doc.getKeyCode())
                         .version(trimmedVersionName)
                         .category(doc.getCategory())

@@ -1,4 +1,4 @@
-package dev.mooka.translationnexus.resource.dto;
+package dev.mooka.translationnexus.domain.model;
 
 import dev.mooka.translationnexus.domain.enums.HistoryActionEnum;
 import lombok.*;
@@ -9,7 +9,7 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class HistoryEntryDTO {
+public class HistoryEntryModel {
     private String locale;
     private String modifiedBy;
     private String previousValue;

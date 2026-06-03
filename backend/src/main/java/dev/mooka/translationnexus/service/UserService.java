@@ -1,6 +1,7 @@
 package dev.mooka.translationnexus.service;
 
-import dev.mooka.translationnexus.domain.User;
+import dev.mooka.translationnexus.domain.model.UserModel;
+import dev.mooka.translationnexus.domain.entity.UserEntity;
 import dev.mooka.translationnexus.repository.UserRepository;
 import dev.mooka.translationnexus.resource.dto.UserCreateDTO;
 import dev.mooka.translationnexus.resource.dto.UserDTO;
@@ -21,10 +22,11 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final MapperService mapperService;
 
     public List<UserDTO> getAllUsers() {
         return userRepository.findAll().stream()
-                .map(this::toDTO)
+                .map(mapperService::toDTO)
                 .toList();
     }
 
@@ -37,28 +39,32 @@ public class UserService {
                 .map(String::toUpperCase)
                 .toList();
 
-        User user = User.builder()
+        UserModel model = UserModel.builder()
                 .username(dto.username())
                 .passwordHash(passwordEncoder.encode(dto.password()))
                 .roles(upperRoles)
                 .allowedLocales(dto.allowedLocales())
                 .build();
 
-        return toDTO(userRepository.save(user));
+        UserEntity user = mapperService.toEntity(model);
+        return mapperService.toDTO(userRepository.save(user));
     }
 
     public UserDTO updateUser(String id, UserUpdateDTO dto) throws BusinessException {
-        User user = userRepository.findById(id)
+        UserEntity entity = userRepository.findById(id)
                 .orElseThrow(UserNotFoundException::new);
+
+        UserModel model = mapperService.toModel(entity);
 
         List<String> upperRoles = (dto.roles() == null) ? List.of() : dto.roles().stream()
                 .map(String::toUpperCase)
                 .toList();
 
-        user.setRoles(upperRoles);
-        user.setAllowedLocales(dto.allowedLocales());
+        model.setRoles(upperRoles);
+        model.setAllowedLocales(dto.allowedLocales());
 
-        return toDTO(userRepository.save(user));
+        UserEntity user = mapperService.toEntity(model);
+        return mapperService.toDTO(userRepository.save(user));
     }
 
     public void deleteUser(String id) throws BusinessException {
@@ -66,14 +72,5 @@ public class UserService {
             throw new UserNotFoundException();
         }
         userRepository.deleteById(id);
-    }
-
-    private UserDTO toDTO(User user) {
-        return new UserDTO(
-                user.getId(),
-                user.getUsername(),
-                user.getRoles(),
-                user.getAllowedLocales()
-        );
     }
 }

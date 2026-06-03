@@ -1,4 +1,4 @@
-package dev.mooka.translationnexus.core;
+package dev.mooka.translationnexus.shared;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

@@ -1,10 +1,11 @@
 package dev.mooka.translationnexus.service;
 
-import dev.mooka.translationnexus.core.PlaceholderValidator;
-import dev.mooka.translationnexus.domain.HistoryEntry;
-import dev.mooka.translationnexus.domain.TranslationDocument;
-import dev.mooka.translationnexus.domain.TranslationValue;
-import dev.mooka.translationnexus.domain.AppVersion;
+import dev.mooka.translationnexus.shared.PlaceholderValidator;
+import dev.mooka.translationnexus.domain.enums.TranslationStatusEnum;
+import dev.mooka.translationnexus.domain.entity.TranslationEntity;
+import dev.mooka.translationnexus.domain.model.TranslationModel;
+import dev.mooka.translationnexus.domain.entity.HistoryEntryEntity;
+import dev.mooka.translationnexus.domain.entity.AppVersionEntity;
 import dev.mooka.translationnexus.exception.impl.*;
 import dev.mooka.translationnexus.repository.TranslationRepository;
 import dev.mooka.translationnexus.resource.dto.TranslationKeyCreateDTO;
@@ -36,11 +37,12 @@ public class TranslationService {
     private final MeterRegistry meterRegistry;
     private final CategoryService categoryService;
     private final VersionService versionService;
+    private final MapperService mapperService;
 
     // ─── Key Management ──────────────────────────────────────────────────────
 
-    public TranslationDocument createKey(TranslationKeyCreateDTO dto) throws BusinessException {
-        AppVersion activeVersion = versionService.getActiveVersion()
+    public TranslationEntity createKey(TranslationKeyCreateDTO dto) throws BusinessException {
+        AppVersionEntity activeVersion = versionService.getActiveVersion()
                 .orElseThrow(() -> new GenericBusinessException("No active version configured."));
         String version = activeVersion.getVersion();
 
@@ -50,7 +52,7 @@ public class TranslationService {
             throw new TranslationKeyAlreadyExistsException(dto.keyCode(), version);
         }
 
-        TranslationDocument doc = TranslationDocument.builder()
+        TranslationEntity entity = TranslationEntity.builder()
                 .keyCode(dto.keyCode())
                 .version(version)
                 .category(dto.category())
@@ -66,12 +68,12 @@ public class TranslationService {
         log.info("Creating translation key: {} for version: {}", dto.keyCode(), version);
         meterRegistry.counter("translation_keys_created_total").increment();
 
-        return translationRepository.save(doc);
+        return translationRepository.save(entity);
     }
 
     // ─── Listing & Filtering ─────────────────────────────────────────────────
 
-    public Page<TranslationDocument> findAll(String version, String tag, String category,
+    public Page<TranslationEntity> findAll(String version, String tag, String category,
                                              String search, Pageable pageable) {
         Query query = new Query();
 
@@ -91,62 +93,46 @@ public class TranslationService {
             ));
         }
 
-        long total = mongoTemplate.count(query, TranslationDocument.class);
+        long total = mongoTemplate.count(query, TranslationEntity.class);
         query.with(pageable);
-        List<TranslationDocument> docs = mongoTemplate.find(query, TranslationDocument.class);
+        List<TranslationEntity> docs = mongoTemplate.find(query, TranslationEntity.class);
 
         return new PageImpl<>(docs, pageable, total);
     }
 
     // ─── Translation Edit ─────────────────────────────────────────────────────
 
-    public TranslationDocument updateTranslation(String id, String locale,
+    public TranslationEntity updateTranslation(String id, String locale,
                                                   TranslationUpdateDTO dto,
                                                   String username, boolean isReviewer) throws BusinessException {
-        TranslationDocument doc = translationRepository.findById(id)
+        TranslationEntity entity = translationRepository.findById(id)
                 .orElseThrow(TranslationNotFoundException::new);
 
-        AppVersion activeVersion = versionService.getActiveVersion()
+        AppVersionEntity activeVersion = versionService.getActiveVersion()
                 .orElseThrow(() -> new GenericBusinessException("No active version configured."));
-        if (!doc.getVersion().equals(activeVersion.getVersion())) {
+        if (!entity.getVersion().equals(activeVersion.getVersion())) {
             throw new VersionLockedException();
         }
 
-        // Validate placeholders
-        if (!PlaceholderValidator.isValid(doc.getBaseValue(), dto.value())) {
-            log.warn("Placeholder validation failed for key: {} and locale: {}. Expected placeholders: {}", doc.getKeyCode(), locale, PlaceholderValidator.extract(doc.getBaseValue()));
+        // Map to domain model
+        TranslationModel model = mapperService.toModel(entity);
+
+        // Apply domain rule inside model
+        try {
+            model.updateTranslation(locale, dto.value(), username, isReviewer);
+        } catch (PlaceholderMismatchException e) {
+            log.warn("Placeholder validation failed for key: {} and locale: {}. Expected placeholders: {}", model.getKeyCode(), locale, PlaceholderValidator.extract(model.getBaseValue()));
             meterRegistry.counter("translation_validation_failures_total", "locale", locale).increment();
-            throw new PlaceholderMismatchException(PlaceholderValidator.extract(doc.getBaseValue()).toString());
+            throw e;
         }
 
-        TranslationValue existing = doc.getTranslations().get(locale);
-        String previousValue = existing != null ? existing.getTranslatedValue() : null;
+        // Map back to entity and save
+        TranslationEntity updatedEntity = mapperService.toEntity(model);
 
-        // Any edit/save operation moves the translation to REVIEW status
-        String newStatus = "REVIEW";
-
-        doc.getTranslations().put(locale, TranslationValue.builder()
-                .translatedValue(dto.value())
-                .status(newStatus)
-                .lastModifiedBy(username)
-                .updatedAt(Instant.now())
-                .build());
-
-        doc.getHistory().add(HistoryEntry.builder()
-                .locale(locale)
-                .modifiedBy(username)
-                .previousValue(previousValue)
-                .newValue(dto.value())
-                .action("EDIT")
-                .timestamp(Instant.now())
-                .build());
-
-        doc.setUpdatedAt(Instant.now());
-
-        log.info("Translation updated for key: {}, locale: {}, by user: {}", doc.getKeyCode(), locale, username);
+        log.info("Translation updated for key: {}, locale: {}, by user: {}", model.getKeyCode(), locale, username);
         meterRegistry.counter("translation_updates_total", "locale", locale).increment();
 
-        return translationRepository.save(doc);
+        return translationRepository.save(updatedEntity);
     }
 
     // ─── Approval ─────────────────────────────────────────────────────────────
@@ -155,104 +141,68 @@ public class TranslationService {
      * Returns all documents that have at least one locale with REVIEW status.
      * Filtered in-memory; acceptable for small datasets.
      */
-    public List<TranslationDocument> findPending() {
+    public List<TranslationEntity> findPending() {
         return translationRepository.findAll().stream()
                 .filter(doc -> doc.getTranslations().values().stream()
-                        .anyMatch(tv -> "REVIEW".equals(tv.getStatus())))
+                        .anyMatch(tv -> tv.getStatus() == TranslationStatusEnum.REVIEW))
                 .toList();
     }
 
-    public TranslationDocument approveTranslation(String id, String locale, String username) throws BusinessException {
-        TranslationDocument doc = translationRepository.findById(id)
+    public TranslationEntity approveTranslation(String id, String locale, String username) throws BusinessException {
+        TranslationEntity entity = translationRepository.findById(id)
                 .orElseThrow(TranslationNotFoundException::new);
 
-        AppVersion activeVersion = versionService.getActiveVersion()
+        AppVersionEntity activeVersion = versionService.getActiveVersion()
                 .orElseThrow(() -> new GenericBusinessException("No active version configured."));
-        if (!doc.getVersion().equals(activeVersion.getVersion())) {
+        if (!entity.getVersion().equals(activeVersion.getVersion())) {
             throw new VersionLockedException();
         }
 
-        TranslationValue val = doc.getTranslations().get(locale);
-        if (val == null) {
-            throw new NoTranslationForLocaleException(locale);
-        }
+        TranslationModel model = mapperService.toModel(entity);
+        model.approveTranslation(locale, username);
 
-        String currentValue = val.getTranslatedValue();
-        val.setStatus("APPROVED");
-        val.setLastModifiedBy(username);
-        val.setUpdatedAt(Instant.now());
+        TranslationEntity updatedEntity = mapperService.toEntity(model);
 
-        doc.getHistory().add(HistoryEntry.builder()
-                .locale(locale)
-                .modifiedBy(username)
-                .previousValue(currentValue)
-                .newValue(currentValue)
-                .action("APPROVE")
-                .timestamp(Instant.now())
-                .build());
-
-        doc.setUpdatedAt(Instant.now());
-
-        log.info("Translation approved for key: {}, locale: {}, by user: {}", doc.getKeyCode(), locale, username);
+        log.info("Translation approved for key: {}, locale: {}, by user: {}", model.getKeyCode(), locale, username);
         meterRegistry.counter("translation_approvals_total", "locale", locale).increment();
 
-        return translationRepository.save(doc);
+        return translationRepository.save(updatedEntity);
     }
 
     // ─── History ──────────────────────────────────────────────────────────────
 
-    public List<HistoryEntry> getHistory(String id) {
-        TranslationDocument doc = translationRepository.findById(id)
+    public List<HistoryEntryEntity> getHistory(String id) {
+        TranslationEntity entity = translationRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Translation key not found"));
-        return doc.getHistory();
+        return entity.getHistory();
     }
 
-    public TranslationDocument updateStatus(String id, String locale, String status, String username) throws BusinessException {
-        TranslationDocument doc = translationRepository.findById(id)
+    public TranslationEntity updateStatus(String id, String locale, TranslationStatusEnum status, String username) throws BusinessException {
+        TranslationEntity entity = translationRepository.findById(id)
                 .orElseThrow(TranslationNotFoundException::new);
 
-        AppVersion activeVersion = versionService.getActiveVersion()
+        AppVersionEntity activeVersion = versionService.getActiveVersion()
                 .orElseThrow(() -> new GenericBusinessException("No active version configured."));
-        if (!doc.getVersion().equals(activeVersion.getVersion())) {
+        if (!entity.getVersion().equals(activeVersion.getVersion())) {
             throw new VersionLockedException();
         }
 
-        TranslationValue val = doc.getTranslations().get(locale);
-        if (val == null) {
-            throw new NoTranslationForLocaleException(locale);
-        }
+        TranslationModel model = mapperService.toModel(entity);
+        model.updateStatus(locale, status, username);
 
-        String prevStatus = val.getStatus();
-        if (!prevStatus.equals(status)) {
-            val.setStatus(status);
-            val.setLastModifiedBy(username);
-            val.setUpdatedAt(Instant.now());
-
-            doc.getHistory().add(HistoryEntry.builder()
-                    .locale(locale)
-                    .modifiedBy(username)
-                    .previousValue(val.getTranslatedValue())
-                    .newValue(val.getTranslatedValue())
-                    .action(status.equals("APPROVED") ? "APPROVE" : "EDIT")
-                    .timestamp(Instant.now())
-                    .build());
-
-            doc.setUpdatedAt(Instant.now());
-            return translationRepository.save(doc);
-        }
-
-        return doc;
+        TranslationEntity updatedEntity = mapperService.toEntity(model);
+        return translationRepository.save(updatedEntity);
     }
 
     public void deleteKey(String id) throws BusinessException {
-        TranslationDocument doc = translationRepository.findById(id)
+        TranslationEntity entity = translationRepository.findById(id)
                 .orElseThrow(TranslationNotFoundException::new);
-        AppVersion activeVersion = versionService.getActiveVersion()
+        AppVersionEntity activeVersion = versionService.getActiveVersion()
                 .orElseThrow(() -> new GenericBusinessException("No active version configured."));
-        if (!doc.getVersion().equals(activeVersion.getVersion())) {
+        if (!entity.getVersion().equals(activeVersion.getVersion())) {
             throw new VersionLockedException();
         }
-        translationRepository.delete(doc);
-        log.info("Translation key deleted: {}", doc.getKeyCode());
+        translationRepository.delete(entity);
+        log.info("Translation key deleted: {}", entity.getKeyCode());
     }
 }

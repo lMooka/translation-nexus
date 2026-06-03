@@ -1,5 +1,6 @@
-package dev.mooka.translationnexus.domain;
+package dev.mooka.translationnexus.domain.model;
 
+import dev.mooka.translationnexus.domain.enums.TranslationStatusEnum;
 import lombok.*;
 import java.time.Instant;
 
@@ -8,14 +9,9 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TranslationValue {
-
+public class TranslationValueModel {
     private String translatedValue;
-
-    /** PENDING_APPROVAL or APPROVED */
-    private String status;
-
+    private TranslationStatusEnum status;
     private String lastModifiedBy;
-
     private Instant updatedAt;
 }

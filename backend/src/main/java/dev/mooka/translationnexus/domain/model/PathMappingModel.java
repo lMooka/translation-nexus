@@ -1,4 +1,4 @@
-package dev.mooka.translationnexus.domain;
+package dev.mooka.translationnexus.domain.model;
 
 import lombok.*;
 
@@ -7,7 +7,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class PathMapping {
+public class PathMappingModel {
     private String pattern;
     private String filename;
 }

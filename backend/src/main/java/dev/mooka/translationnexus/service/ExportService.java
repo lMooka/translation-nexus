@@ -1,14 +1,15 @@
 package dev.mooka.translationnexus.service;
 
-import dev.mooka.translationnexus.domain.Category;
-import dev.mooka.translationnexus.domain.Locale;
-import dev.mooka.translationnexus.domain.PathMapping;
-import dev.mooka.translationnexus.domain.TranslationDocument;
-import dev.mooka.translationnexus.domain.TranslationValue;
+import dev.mooka.translationnexus.domain.entity.CategoryEntity;
+import dev.mooka.translationnexus.domain.entity.LocaleEntity;
+import dev.mooka.translationnexus.domain.entity.PathMappingEntity;
+import dev.mooka.translationnexus.domain.entity.TranslationEntity;
+import dev.mooka.translationnexus.domain.entity.TranslationValueEntity;
+import dev.mooka.translationnexus.domain.enums.TranslationStatusEnum;
 import dev.mooka.translationnexus.repository.CategoryRepository;
 import dev.mooka.translationnexus.repository.LocaleRepository;
 import dev.mooka.translationnexus.repository.TranslationRepository;
-import dev.mooka.translationnexus.core.CategoryValidationHelper;
+import dev.mooka.translationnexus.shared.CategoryValidationHelper;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
@@ -35,10 +36,10 @@ public class ExportService {
      * as separate CSV files inside a ZIP archive.
      */
     public void exportZip(String version, OutputStream outputStream) throws IOException {
-        List<Locale> locales = localeRepository.findAll().stream()
-                .sorted(Comparator.comparing(Locale::getSortOrder, Comparator.nullsLast(Comparator.naturalOrder())))
+        List<LocaleEntity> locales = localeRepository.findAll().stream()
+                .sorted(Comparator.comparing(LocaleEntity::getSortOrder, Comparator.nullsLast(Comparator.naturalOrder())))
                 .toList();
-        List<String> localeIds = locales.stream().map(Locale::getId).toList();
+        List<String> localeIds = locales.stream().map(LocaleEntity::getId).toList();
 
         // Build CSV Headers: key, value_en, value_<locale1>, ...
         List<String> headersList = new ArrayList<>();
@@ -49,21 +50,21 @@ public class ExportService {
         }
         String[] headers = headersList.toArray(new String[0]);
 
-        List<Category> categories = categoryRepository.findAll();
-        List<TranslationDocument> allDocs = translationRepository.findAll();
+        List<CategoryEntity> categories = categoryRepository.findAll();
+        List<TranslationEntity> allDocs = translationRepository.findAll();
 
         // Group rows by filename
         // Map<Filename, List<RowValues>>
         Map<String, List<List<String>>> groupedFiles = new LinkedHashMap<>();
 
-        for (TranslationDocument doc : allDocs) {
+        for (TranslationEntity doc : allDocs) {
             // Filter version
             if (version != null && !version.isBlank() && !version.equals(doc.getVersion())) {
                 continue;
             }
 
             // Find matching category
-            Category matchingCategory = categories.stream()
+            CategoryEntity matchingCategory = categories.stream()
                     .filter(c -> c.getName().equalsIgnoreCase(doc.getCategory()))
                     .findFirst()
                     .orElse(null);
@@ -73,7 +74,7 @@ public class ExportService {
             }
 
             // Find matching path mapping
-            PathMapping matchingMapping = matchingCategory.getPathMappings().stream()
+            PathMappingEntity matchingMapping = matchingCategory.getPathMappings().stream()
                     .filter(pm -> CategoryValidationHelper.matchPath(doc.getKeyCode(), pm.getPattern()))
                     .findFirst()
                     .orElse(null);
@@ -91,8 +92,8 @@ public class ExportService {
             row.add(doc.getBaseValue() != null ? doc.getBaseValue() : "");
 
             for (String lid : localeIds) {
-                TranslationValue tv = doc.getTranslations().get(lid);
-                if (tv != null && "APPROVED".equals(tv.getStatus())) {
+                TranslationValueEntity tv = doc.getTranslations().get(lid);
+                if (tv != null && tv.getStatus() == TranslationStatusEnum.APPROVED) {
                     row.add(tv.getTranslatedValue() != null ? tv.getTranslatedValue() : "");
                 } else {
                     row.add("");

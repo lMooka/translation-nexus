@@ -1,9 +1,10 @@
-package dev.mooka.translationnexus.domain;
+package dev.mooka.translationnexus.domain.entity;
 
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.CompoundIndexes;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
@@ -18,36 +19,27 @@ import java.util.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TranslationDocument {
+public class TranslationEntity {
 
     @Id
     private String id;
-
     private String keyCode;
 
+    @Indexed
     private String version;
 
+    @Indexed
     private String category;
 
+    @Indexed
+    @Builder.Default
     private List<String> tags = new ArrayList<>();
-
     private String contextInfo;
-
-    /** English source text — the authoritative base value */
     private String baseValue;
-
-    /**
-     * Map of locale → translation value.
-     * Key examples: "pt", "es", "fr", "de", "ja"
-     */
     @Builder.Default
-    private Map<String, TranslationValue> translations = new HashMap<>();
-
-    /** Full audit trail of all edits and approvals */
+    private Map<String, TranslationValueEntity> translations = new HashMap<>();
     @Builder.Default
-    private List<HistoryEntry> history = new ArrayList<>();
-
+    private List<HistoryEntryEntity> history = new ArrayList<>();
     private Instant createdAt;
-
     private Instant updatedAt;
 }

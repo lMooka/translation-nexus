@@ -1,4 +1,4 @@
-package dev.mooka.translationnexus.domain;
+package dev.mooka.translationnexus.domain.entity;
 
 import lombok.*;
 import org.springframework.data.annotation.Id;
@@ -6,22 +6,27 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
-@Document(collection = "versions")
+@Document(collection = "categories")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AppVersion {
+public class CategoryEntity {
 
     @Id
     private String id;
 
     @Indexed(unique = true)
-    private String version;
+    private String name;
 
-    private boolean active;
+    @Builder.Default
+    private List<PathMappingEntity> pathMappings = new ArrayList<>();
 
     private Instant createdAt;
+
+    private Instant updatedAt;
 }

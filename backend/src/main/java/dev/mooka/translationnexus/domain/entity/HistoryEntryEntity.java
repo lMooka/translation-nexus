@@ -1,5 +1,6 @@
-package dev.mooka.translationnexus.domain;
+package dev.mooka.translationnexus.domain.entity;
 
+import dev.mooka.translationnexus.domain.enums.HistoryActionEnum;
 import lombok.*;
 import java.time.Instant;
 
@@ -8,18 +9,11 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class HistoryEntry {
-
+public class HistoryEntryEntity {
     private String locale;
-
     private String modifiedBy;
-
     private String previousValue;
-
     private String newValue;
-
-    /** EDIT or APPROVE */
-    private String action;
-
+    private HistoryActionEnum action;
     private Instant timestamp;
 }

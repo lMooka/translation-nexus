@@ -1,4 +1,4 @@
-package dev.mooka.translationnexus.resource.dto;
+package dev.mooka.translationnexus.domain.entity;
 
 import dev.mooka.translationnexus.domain.enums.TranslationStatusEnum;
 import lombok.*;
@@ -9,9 +9,9 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TranslationValueDTO {
+public class TranslationValueEntity {
     private String translatedValue;
-    private TranslationStatusEnum status;
+    private TranslationStatusEnum status; // PENDING, APPROVED, REVIEW
     private String lastModifiedBy;
     private Instant updatedAt;
 }

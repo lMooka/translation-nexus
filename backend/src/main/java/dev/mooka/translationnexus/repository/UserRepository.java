@@ -1,10 +1,10 @@
 package dev.mooka.translationnexus.repository;
 
-import dev.mooka.translationnexus.domain.User;
+import dev.mooka.translationnexus.domain.entity.UserEntity;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.Optional;
 
-public interface UserRepository extends MongoRepository<User, String> {
-    Optional<User> findByUsername(String username);
+public interface UserRepository extends MongoRepository<UserEntity, String> {
+    Optional<UserEntity> findByUsername(String username);
 }

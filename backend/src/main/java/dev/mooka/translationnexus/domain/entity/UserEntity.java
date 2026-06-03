@@ -1,7 +1,8 @@
-package dev.mooka.translationnexus.domain;
+package dev.mooka.translationnexus.domain.entity;
 
 import lombok.*;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.ArrayList;
@@ -13,11 +14,12 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+public class UserEntity {
 
     @Id
     private String id;
 
+    @Indexed(unique = true)
     private String username;
 
     private String passwordHash;

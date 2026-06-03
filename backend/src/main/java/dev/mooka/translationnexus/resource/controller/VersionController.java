@@ -1,6 +1,6 @@
 package dev.mooka.translationnexus.resource.controller;
 
-import dev.mooka.translationnexus.domain.AppVersion;
+import dev.mooka.translationnexus.domain.entity.AppVersionEntity;
 import dev.mooka.translationnexus.exception.BusinessException;
 import dev.mooka.translationnexus.service.VersionService;
 import dev.mooka.translationnexus.resource.dto.AppVersionCreateDTO;
@@ -24,13 +24,13 @@ public class VersionController {
 
     @GetMapping
     @Operation(summary = "Get list of all versions")
-    public ResponseEntity<List<AppVersion>> list() {
+    public ResponseEntity<List<AppVersionEntity>> list() {
         return ResponseEntity.ok(versionService.getAllVersions());
     }
 
     @PostMapping
     @Operation(summary = "Create a new version", description = "Deactivates current active version and clones all translation documents to the new version. MANAGER only.")
-    public ResponseEntity<AppVersion> create(@Valid @RequestBody AppVersionCreateDTO dto) throws BusinessException {
+    public ResponseEntity<AppVersionEntity> create(@Valid @RequestBody AppVersionCreateDTO dto) throws BusinessException {
         return ResponseEntity.status(HttpStatus.CREATED).body(versionService.createVersion(dto.version()));
     }
 }

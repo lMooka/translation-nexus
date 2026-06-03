@@ -1,6 +1,6 @@
 package dev.mooka.translationnexus.resource.controller;
 
-import dev.mooka.translationnexus.domain.Locale;
+import dev.mooka.translationnexus.domain.entity.LocaleEntity;
 import dev.mooka.translationnexus.resource.dto.LocaleDTO;
 import dev.mooka.translationnexus.service.MapperService;
 import dev.mooka.translationnexus.service.LocaleService;
@@ -36,16 +36,16 @@ public class LocaleController {
     @PostMapping
     @Operation(summary = "Create a new locale. MANAGER only.")
     public ResponseEntity<LocaleDTO> create(@RequestBody LocaleDTO localeDTO) throws BusinessException {
-        Locale locale = mapperService.toEntity(localeDTO);
-        Locale created = localeService.createLocale(locale);
+        LocaleEntity locale = mapperService.toEntity(localeDTO);
+        LocaleEntity created = localeService.createLocale(locale);
         return ResponseEntity.status(HttpStatus.CREATED).body(mapperService.toDTO(created));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update an existing locale. MANAGER only.")
     public ResponseEntity<LocaleDTO> update(@PathVariable String id, @RequestBody LocaleDTO localeDTO) throws BusinessException {
-        Locale locale = mapperService.toEntity(localeDTO);
-        Locale updated = localeService.updateLocale(id, locale);
+        LocaleEntity locale = mapperService.toEntity(localeDTO);
+        LocaleEntity updated = localeService.updateLocale(id, locale);
         return ResponseEntity.ok(mapperService.toDTO(updated));
     }
 

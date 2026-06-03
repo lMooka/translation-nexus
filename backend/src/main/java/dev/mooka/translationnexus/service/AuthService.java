@@ -1,6 +1,6 @@
 package dev.mooka.translationnexus.service;
 
-import dev.mooka.translationnexus.domain.User;
+import dev.mooka.translationnexus.domain.entity.UserEntity;
 import dev.mooka.translationnexus.repository.UserRepository;
 import dev.mooka.translationnexus.security.JwtTokenProvider;
 import dev.mooka.translationnexus.resource.dto.LoginRequest;
@@ -21,7 +21,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
 
     public LoginResponse login(LoginRequest request) throws BusinessException {
-        User user = userRepository.findByUsername(request.username())
+        UserEntity user = userRepository.findByUsername(request.username())
                 .orElseThrow(InvalidCredentialsException::new);
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {

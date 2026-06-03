@@ -2,8 +2,9 @@ package dev.mooka.translationnexus.resource.controller;
 
 import dev.mooka.translationnexus.exception.BusinessException;
 import dev.mooka.translationnexus.exception.impl.NoPermissionException;
-import dev.mooka.translationnexus.domain.TranslationDocument;
-import dev.mooka.translationnexus.domain.Locale;
+import dev.mooka.translationnexus.domain.entity.TranslationEntity;
+import dev.mooka.translationnexus.domain.entity.LocaleEntity;
+import dev.mooka.translationnexus.domain.enums.TranslationStatusEnum;
 import dev.mooka.translationnexus.security.Roles;
 import dev.mooka.translationnexus.service.TranslationService;
 import dev.mooka.translationnexus.service.LocaleService;
@@ -25,7 +26,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController
@@ -49,7 +49,7 @@ public class TranslationController {
             @ApiResponse(responseCode = "409", description = "Key already exists for the given version")
     })
     public ResponseEntity<TranslationDocumentDTO> createKey(@Valid @RequestBody TranslationKeyCreateDTO dto) throws BusinessException {
-        TranslationDocument created = translationService.createKey(dto);
+        TranslationEntity created = translationService.createKey(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(mapperService.toDTO(created));
     }
 
@@ -101,7 +101,7 @@ public class TranslationController {
             throw new NoPermissionException();
         }
 
-        TranslationDocument updated = translationService.updateTranslation(id, locale, dto, username, isReviewer);
+        TranslationEntity updated = translationService.updateTranslation(id, locale, dto, username, isReviewer);
         return ResponseEntity.ok(mapperService.toDTO(updated));
     }
 
@@ -133,7 +133,7 @@ public class TranslationController {
             Authentication authentication) throws BusinessException {
 
         String username = (String) authentication.getPrincipal();
-        TranslationDocument approved = translationService.approveTranslation(id, locale, username);
+        TranslationEntity approved = translationService.approveTranslation(id, locale, username);
         return ResponseEntity.ok(mapperService.toDTO(approved));
     }
 
@@ -163,15 +163,15 @@ public class TranslationController {
     public ResponseEntity<TranslationDocumentDTO> updateStatus(
             @PathVariable String id,
             @PathVariable String locale,
-            @RequestParam String status,
+            @RequestParam TranslationStatusEnum status,
             Authentication authentication) throws BusinessException {
         boolean isReviewer = authentication.getAuthorities().stream()
-                .anyMatch(a -> Objects.equals(a.getAuthority(), Roles.ROLE_REVIEWER));
+                .anyMatch(a -> a.getAuthority().equals(Roles.ROLE_REVIEWER));
         if (!isReviewer) {
             throw new NoPermissionException();
         }
         String username = (String) authentication.getPrincipal();
-        TranslationDocument updated = translationService.updateStatus(id, locale, status, username);
+        TranslationEntity updated = translationService.updateStatus(id, locale, status, username);
         return ResponseEntity.ok(mapperService.toDTO(updated));
     }
 
@@ -195,7 +195,7 @@ public class TranslationController {
     @Operation(summary = "Auto-translate text via Google Cloud Translation API", description = "Translates base text into the target language code.")
     public ResponseEntity<TranslateResponseDTO> translate(@Valid @RequestBody TranslateRequestDTO dto) throws BusinessException {
         String targetLang = dto.targetLanguage();
-        java.util.Optional<Locale> localeOpt = localeService.getLocaleById(targetLang);
+        java.util.Optional<LocaleEntity> localeOpt = localeService.getLocaleById(targetLang);
         if (localeOpt.isPresent() && localeOpt.get().getGoogleCode() != null && !localeOpt.get().getGoogleCode().isBlank()) {
             targetLang = localeOpt.get().getGoogleCode().trim();
         }

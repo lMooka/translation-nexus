@@ -1,6 +1,6 @@
 package dev.mooka.translationnexus.resource.controller;
 
-import dev.mooka.translationnexus.domain.Category;
+import dev.mooka.translationnexus.domain.entity.CategoryEntity;
 import dev.mooka.translationnexus.resource.dto.CategoryDTO;
 import dev.mooka.translationnexus.service.MapperService;
 import dev.mooka.translationnexus.service.CategoryService;
@@ -36,16 +36,16 @@ public class CategoryController {
     @PostMapping
     @Operation(summary = "Create a new category. MANAGER only.")
     public ResponseEntity<CategoryDTO> create(@RequestBody CategoryDTO categoryDTO) throws BusinessException {
-        Category category = mapperService.toEntity(categoryDTO);
-        Category created = categoryService.createCategory(category);
+        CategoryEntity category = mapperService.toEntity(categoryDTO);
+        CategoryEntity created = categoryService.createCategory(category);
         return ResponseEntity.status(HttpStatus.CREATED).body(mapperService.toDTO(created));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update an existing category. MANAGER only.")
     public ResponseEntity<CategoryDTO> update(@PathVariable String id, @RequestBody CategoryDTO categoryDTO) throws BusinessException {
-        Category category = mapperService.toEntity(categoryDTO);
-        Category updated = categoryService.updateCategory(id, category);
+        CategoryEntity category = mapperService.toEntity(categoryDTO);
+        CategoryEntity updated = categoryService.updateCategory(id, category);
         return ResponseEntity.ok(mapperService.toDTO(updated));
     }
 
