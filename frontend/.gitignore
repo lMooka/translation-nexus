@@ -1,0 +1,24 @@
+# Node dependency directory
+node_modules/
+
+# Angular build output
+/dist/
+/.angular/
+
+# Environment files (local development overrides)
+/src/environments/environment.development.ts
+/src/environments/environment.ts
+
+# Cache & Temp files
+.npm/
+.eslintcache
+.parcel-cache
+
+# Log files
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*

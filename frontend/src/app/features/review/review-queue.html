@@ -1,0 +1,100 @@
+<div class="rq-page">
+
+  <div class="rq-header">
+    <h1>Review Queue</h1>
+    <span class="badge badge-review">{{ pendingItems.length }} pending review</span>
+  </div>
+
+  @if (loading) {
+    <div class="loading-msg text-muted">Loading pending translations…</div>
+  } @else if (pendingItems.length === 0) {
+    <div class="empty-state card">
+      <div class="empty-icon">✅</div>
+      <h2>All caught up!</h2>
+      <p class="text-muted">There are no translations pending approval.</p>
+    </div>
+  } @else {
+    <div class="rq-layout">
+
+      <!-- Left: pending list -->
+      <div class="rq-list card">
+        @for (item of pendingItems; track item.doc.id + item.locale) {
+          <div
+            class="rq-item"
+            [class.active]="isSelected(item)"
+            (click)="select(item)">
+            <div class="rq-item-key mono">{{ item.doc.keyCode }}</div>
+            <div class="rq-item-meta">
+              <span class="badge badge-none">{{ item.locale.toUpperCase() }}</span>
+              <span class="badge badge-none">{{ item.doc.version }}</span>
+            </div>
+            <p class="rq-item-preview text-muted text-sm">{{ translationOf(item) }}</p>
+          </div>
+        }
+      </div>
+
+      <!-- Right: detail panel -->
+      @if (selected) {
+        <div class="rq-detail card">
+          <div class="detail-header">
+            <div>
+              <h2 class="mono">{{ selected.doc.keyCode }}</h2>
+              <div class="detail-meta">
+                <span class="badge badge-none">{{ selected.locale.toUpperCase() }}</span>
+                <span class="badge badge-none">{{ selected.doc.version }}</span>
+                <span class="badge badge-none">{{ selected.doc.category }}</span>
+              </div>
+            </div>
+            <button class="btn-approve" (click)="approve()" [disabled]="approving">
+              {{ approving ? 'Approving…' : '✓ Approve' }}
+            </button>
+          </div>
+
+          @if (selected.doc.contextInfo) {
+            <div class="context-box">
+              <span class="context-label">Context</span>
+              <p class="text-muted text-sm">{{ selected.doc.contextInfo }}</p>
+            </div>
+          }
+
+          <div class="diff-grid">
+            <div class="diff-col">
+              <div class="diff-label">English Source</div>
+              <div class="diff-value source">{{ selected.doc.baseValue }}</div>
+            </div>
+            <div class="diff-col">
+              <div class="diff-label">Previous Value</div>
+              <div class="diff-value previous">{{ previousValueOf(selected) }}</div>
+            </div>
+            <div class="diff-col span-2">
+              <div class="diff-label pending-label">New Value (Pending Review)</div>
+              <div class="diff-value new">{{ translationOf(selected) }}</div>
+            </div>
+          </div>
+
+          <div class="history-section">
+            <h3>Audit History for <span class="mono">{{ selected.locale.toUpperCase() }}</span></h3>
+            @if (history.length === 0) {
+              <p class="text-muted text-sm">No history entries.</p>
+            }
+            @for (entry of history; track entry.timestamp) {
+              <div class="history-entry">
+                <div class="history-action" [class]="'action-' + entry.action.toLowerCase()">
+                  {{ entry.action }}
+                </div>
+                <div class="history-body">
+                  <span class="history-user">{{ entry.modifiedBy }}</span>
+                  <span class="text-muted text-sm">{{ entry.timestamp | date:'yyyy-MM-dd HH:mm' }}</span>
+                  @if (entry.previousValue) {
+                    <del class="history-old">{{ entry.previousValue }}</del>
+                  }
+                  <ins class="history-new">{{ entry.newValue }}</ins>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

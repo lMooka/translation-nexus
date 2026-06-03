@@ -1,0 +1,84 @@
+<div class="admin-page">
+
+  <div class="admin-header">
+    <h1>Category & Path Mapping</h1>
+    <button class="btn-primary" (click)="openCreateModal()">+ Add Category</button>
+  </div>
+
+  <div class="table-wrap card">
+    <div *ngIf="loading" class="loading-row">Loading categories…</div>
+    <div *ngIf="!loading && categories.length === 0" class="loading-row text-muted">No categories configured.</div>
+    <table *ngIf="!loading && categories.length > 0">
+      <thead>
+        <tr>
+          <th>Category Name</th>
+          <th>Path Mappings & Target Files</th>
+          <th class="actions-header">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let category of categories">
+          <td class="category-name-cell">
+            <span class="badge"
+              style="background: rgba(124, 107, 255, 0.15); color: var(--accent); padding: 4px 10px; border-radius: 999px;">{{
+              category.name }}</span>
+          </td>
+          <td>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div *ngFor="let pm of category.pathMappings" style="display: flex; align-items: center; gap: 8px;">
+                <span class="tag-chip" style="font-family: monospace;">{{ pm.pattern }} ➔ {{ pm.filename }}</span>
+              </div>
+              <span class="text-muted text-sm" *ngIf="!category.pathMappings || category.pathMappings.length === 0">No
+                mappings configured</span>
+            </div>
+          </td>
+          <td class="actions-cell">
+            <div class="actions-wrapper">
+              <button class="btn-ghost btn-sm btn-edit" (click)="openEditModal(category)">Edit</button>
+              <button class="btn-ghost btn-sm btn-delete" (click)="deleteCategory(category)">Delete</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div class="modal-backdrop" *ngIf="showModal">
+    <div class="modal card" (click)="$event.stopPropagation()">
+      <h2>{{ isEditMode ? 'Edit Category' : 'Create New Category' }}</h2>
+
+      <div class="modal-fields">
+        <div class="field">
+          <label>Category Name</label>
+          <input [(ngModel)]="name" placeholder="e.g. ITEM" [disabled]="isEditMode">
+        </div>
+
+        <div class="field">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <label style="margin-bottom: 0;">Path Mappings (Must contain exactly one '*')</label>
+            <button class="btn-ghost btn-sm" (click)="addPathMapping()">+ Add Mapping</button>
+          </div>
+
+          <div *ngFor="let pm of pathMappings; let i = index"
+            style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
+            <input [(ngModel)]="pm.pattern" placeholder="e.g. skill.*.name" style="flex: 1;">
+            <input [(ngModel)]="pm.filename" placeholder="e.g. skills.csv" style="flex: 1;">
+            <button class="btn-ghost btn-sm" style="color: #ef4444;" (click)="removePathMapping(i)">Remove</button>
+          </div>
+          <span class="text-muted text-sm" style="display: block; font-size: 11px; margin-top: 4px;">
+            The segment matched by * will be extracted as the translation key alias inside the exported CSV file.
+          </span>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-ghost" (click)="showModal = false">Cancel</button>
+        <button class="btn-primary" (click)="saveCategory()" [disabled]="saving">
+          {{ saving ? 'Saving…' : 'Save Changes' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

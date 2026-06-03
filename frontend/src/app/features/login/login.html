@@ -1,0 +1,28 @@
+<div class="login-page">
+  <div class="login-card card">
+    <div class="login-header">
+      <div class="login-icon">📜</div>
+      <h1>Translation Nexus</h1>
+      <p class="login-subtitle">Translation Nexus</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <div class="field">
+        <label for="username">Username</label>
+        <input id="username" type="text" formControlName="username" placeholder="Enter your username" autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" type="password" formControlName="password" placeholder="Enter your password" autocomplete="current-password">
+      </div>
+
+      @if (error) {
+        <div class="error-box">{{ error }}</div>
+      }
+
+      <button type="submit" class="btn-primary login-btn" [disabled]="loading">
+        {{ loading ? 'Signing in…' : 'Sign In' }}
+      </button>
+    </form>
+  </div>
+</div>

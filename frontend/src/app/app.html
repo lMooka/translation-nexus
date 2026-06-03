@@ -1,0 +1,26 @@
+<nav class="navbar" *ngIf="auth.isLoggedIn()">
+  <div class="nav-brand">
+    <span class="brand-icon">📜</span>
+    <span class="brand-name"><span class="brand-sub">Translation Nexus</span></span>
+  </div>
+  <div class="nav-links">
+    <a routerLink="/translations" routerLinkActive="active">Translations</a>
+    <a routerLink="/review" routerLinkActive="active" *ngIf="auth.isReviewer()">Review Queue</a>
+    <a routerLink="/categories" routerLinkActive="active" *ngIf="auth.isManager()">Categories</a>
+    <a routerLink="/languages" routerLinkActive="active" *ngIf="auth.isManager()">Languages</a>
+    <a routerLink="/admin" routerLinkActive="active" *ngIf="auth.isAdmin()">Admin Panel</a>
+  </div>
+  <div class="nav-user">
+    <div class="role-badges">
+      @for (role of auth.roles(); track role) {
+        <span class="role-badge" [class]="role.toLowerCase()">{{ role }}</span>
+      }
+    </div>
+    <span class="username">{{ auth.username() }}</span>
+    <button class="btn-logout" (click)="auth.logout()">Logout</button>
+  </div>
+</nav>
+
+<main>
+  <router-outlet />
+</main>

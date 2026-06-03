@@ -1,0 +1,95 @@
+<div class="admin-page">
+
+  <div class="admin-header">
+    <h1>User & Permissions Management</h1>
+    <button class="btn-primary" (click)="openCreateModal()">+ Add User</button>
+  </div>
+
+  <div class="table-wrap card">
+    <div *ngIf="loading" class="loading-row">Loading users…</div>
+    <div *ngIf="!loading && users.length === 0" class="loading-row text-muted">No users found.</div>
+    <table *ngIf="!loading && users.length > 0">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Roles</th>
+          <th>Language Permissions</th>
+          <th class="actions-header">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of users">
+          <td class="username-cell">
+            <span class="mono">{{ user.username }}</span>
+          </td>
+          <td>
+            <div class="role-badges">
+              <span *ngFor="let r of user.roles" class="role-badge" [class]="r.toLowerCase()">{{ r }}</span>
+            </div>
+          </td>
+          <td>
+            <div class="permissions-container" *ngIf="user.roles.includes('TRANSLATOR')">
+              <span class="tag-chip" *ngFor="let loc of user.allowedLocales">{{ loc.toUpperCase() }}</span>
+              <span class="text-muted text-sm" *ngIf="!user.allowedLocales || user.allowedLocales.length === 0">No languages assigned</span>
+            </div>
+            <span class="text-muted text-sm" *ngIf="!user.roles.includes('TRANSLATOR')">All languages (implied)</span>
+          </td>
+          <td class="actions-cell">
+            <div class="actions-wrapper">
+              <button class="btn-ghost btn-sm btn-edit" (click)="openEditModal(user)">Edit</button>
+              <button class="btn-ghost btn-sm btn-delete" (click)="deleteUser(user)">Delete</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div class="modal-backdrop" *ngIf="showModal">
+    <div class="modal card" (click)="$event.stopPropagation()">
+      <h2>{{ isEditMode ? 'Edit User Permissions' : 'Create New User' }}</h2>
+
+      <div class="modal-fields">
+        <div class="field">
+          <label>Username</label>
+          <input [(ngModel)]="username" placeholder="e.g. jdoe" [disabled]="isEditMode">
+        </div>
+
+        <div class="field" *ngIf="!isEditMode">
+          <label>Password</label>
+          <input type="password" [(ngModel)]="password" placeholder="Password">
+        </div>
+
+        <div class="field">
+          <label>Roles</label>
+          <div class="locales-checkbox-grid">
+            <div class="checkbox-wrapper" *ngFor="let r of ROLES">
+              <input type="checkbox" [id]="'chk-role-' + r" [(ngModel)]="selectedRoles[r]" (change)="onRoleChange(r)">
+              <label [for]="'chk-role-' + r">{{ r }}</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Language checklist (only visible/relevant for TRANSLATOR role) -->
+        <div class="field" *ngIf="isTranslatorSelected()">
+          <label>Language Permissions</label>
+          <div class="locales-checkbox-grid">
+            <div class="checkbox-wrapper" *ngFor="let l of LOCALES">
+              <input type="checkbox" [id]="'chk-' + l" [(ngModel)]="selectedLocales[l]">
+              <label [for]="'chk-' + l">{{ l.toUpperCase() }}</label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-ghost" (click)="showModal = false">Cancel</button>
+        <button class="btn-primary" (click)="saveUser()" [disabled]="saving">
+          {{ saving ? 'Saving…' : 'Save Changes' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

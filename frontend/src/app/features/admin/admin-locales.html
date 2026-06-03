@@ -1,0 +1,74 @@
+<div class="admin-page">
+
+  <div class="admin-header">
+    <h1>Languages (Locales)</h1>
+    <button class="btn-primary" (click)="openCreateModal()">+ Add Language</button>
+  </div>
+
+  <div class="table-wrap card">
+    <div *ngIf="loading" class="loading-row">Loading languages…</div>
+    <div *ngIf="!loading && locales.length === 0" class="loading-row text-muted">No languages configured.</div>
+    <table *ngIf="!loading && locales.length > 0">
+      <thead>
+        <tr>
+          <th>Language Code</th>
+          <th>Descriptive Name</th>
+          <th>Google Translate Code</th>
+          <th class="actions-header">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let locale of locales">
+          <td>
+            <span class="tag-chip" style="font-family: monospace; text-transform: uppercase;">{{ locale.id }}</span>
+          </td>
+          <td>
+            <span class="mono">{{ locale.name }}</span>
+          </td>
+          <td>
+            <span class="mono text-muted" *ngIf="!locale.googleCode">—</span>
+            <span class="tag-chip" style="background: rgba(124, 107, 255, 0.1); color: var(--accent); font-family: monospace;" *ngIf="locale.googleCode">{{ locale.googleCode }}</span>
+          </td>
+          <td class="actions-cell">
+            <div class="actions-wrapper">
+              <button class="btn-ghost btn-sm btn-edit" (click)="openEditModal(locale)">Edit</button>
+              <button class="btn-ghost btn-sm btn-delete" (click)="deleteLocale(locale)">Delete</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div class="modal-backdrop" *ngIf="showModal">
+    <div class="modal card" (click)="$event.stopPropagation()">
+      <h2>{{ isEditMode ? 'Edit Language' : 'Add New Language' }}</h2>
+
+      <div class="modal-fields">
+        <div class="field">
+          <label>Language Code (e.g. pt, es, fr)</label>
+          <input [(ngModel)]="localeId" placeholder="e.g. pt" [disabled]="isEditMode">
+        </div>
+
+        <div class="field">
+          <label>Descriptive Name</label>
+          <input [(ngModel)]="name" placeholder="e.g. Portuguese">
+        </div>
+
+        <div class="field">
+          <label>Google Translate Code</label>
+          <input [(ngModel)]="googleCode" placeholder="e.g. pt (optional)">
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-ghost" (click)="showModal = false">Cancel</button>
+        <button class="btn-primary" (click)="saveLocale()" [disabled]="saving">
+          {{ saving ? 'Saving…' : 'Save Changes' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

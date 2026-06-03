@@ -1,0 +1,225 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ── CSS Variables ─────────────────────────────────────────────────────── */
+:root {
+  --bg-base:       #0d0f1a;
+  --bg-surface:    #151827;
+  --bg-card:       #1c2033;
+  --bg-hover:      #222740;
+  --border:        #2a2f4a;
+  --border-light:  #363d5e;
+
+  --accent:        #7c6bff;
+  --accent-hover:  #6b5ce7;
+  --accent-glow:   rgba(124, 107, 255, 0.25);
+
+  --gold:          #f0b429;
+  --gold-dim:      rgba(240, 180, 41, 0.15);
+
+  --text-primary:  #e2e8f0;
+  --text-secondary:#94a3b8;
+  --text-muted:    #4a5568;
+
+  --status-pending:#f59e0b;
+  --status-pending-bg: rgba(245, 158, 11, 0.12);
+  --status-approved:#22c55e;
+  --status-approved-bg: rgba(34, 197, 94, 0.12);
+
+  --danger:        #ef4444;
+  --danger-bg:     rgba(239, 68, 68, 0.12);
+
+  --radius:        8px;
+  --radius-lg:     12px;
+  --shadow:        0 4px 20px rgba(0,0,0,0.4);
+  --shadow-lg:     0 8px 40px rgba(0,0,0,0.6);
+}
+
+/* ── Reset ─────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Nav ───────────────────────────────────────────────────────────────── */
+.navbar {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0 1.5rem;
+  height: 56px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+.brand-icon { font-size: 1.25rem; }
+.brand-sub { color: var(--accent); font-weight: 500; }
+
+.nav-links {
+  display: flex;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.nav-links a {
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s, background 0.15s;
+}
+.nav-links a:hover { color: var(--text-primary); background: var(--bg-hover); }
+.nav-links a.active { color: var(--accent); background: var(--accent-glow); }
+
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.username { color: var(--text-secondary); font-size: 0.875rem; }
+
+.role-badge {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.role-badge.translator { background: var(--accent-glow); color: var(--accent); }
+.role-badge.reviewer   { background: var(--gold-dim); color: var(--gold); }
+.role-badge.manager    { background: rgba(56, 189, 248, 0.15); color: rgb(56, 189, 248); }
+.role-badge.admin      { background: rgba(147, 51, 234, 0.15); color: rgb(168, 85, 247); }
+
+.role-badges { display: flex; gap: 0.35rem; }
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+button, .btn { cursor: pointer; border: none; font-family: inherit; }
+
+.btn-logout {
+  padding: 0.35rem 0.8rem;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+  font-size: 0.8rem;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-logout:hover { background: var(--danger-bg); color: var(--danger); border-color: var(--danger); }
+
+.btn-primary {
+  padding: 0.5rem 1.1rem;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.btn-primary:hover { background: var(--accent-hover); box-shadow: 0 0 16px var(--accent-glow); }
+
+.btn-approve {
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--radius);
+  background: var(--status-approved-bg);
+  color: var(--status-approved);
+  border: 1px solid var(--status-approved);
+  font-weight: 600;
+  font-size: 0.8rem;
+  transition: background 0.15s;
+}
+.btn-approve:hover { background: rgba(34, 197, 94, 0.25); }
+
+.btn-ghost {
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-light);
+  font-size: 0.8rem;
+  transition: background 0.15s, color 0.15s;
+}
+.btn-ghost:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+/* ── Inputs ────────────────────────────────────────────────────────────── */
+input, textarea, select {
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+textarea { resize: vertical; font-family: 'JetBrains Mono', monospace; }
+
+/* ── Status Badges ─────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.badge-pending  { background: var(--danger-bg);          color: var(--danger); }
+.badge-review   { background: var(--status-pending-bg);  color: var(--status-pending); }
+.badge-approved { background: var(--status-approved-bg); color: var(--status-approved); }
+.badge-none     { background: rgba(100,100,120,0.15);    color: var(--text-muted); }
+
+/* ── Cards ─────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+/* ── Main layout ───────────────────────────────────────────────────────── */
+main { min-height: calc(100vh - 56px); }
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ── Utilities ─────────────────────────────────────────────────────────── */
+.mono { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+.text-muted { color: var(--text-secondary); }
+.text-sm { font-size: 0.8rem; }
+.gap-1 { gap: 0.25rem; }
+.flex { display: flex; }
+.items-center { align-items: center; }
