@@ -35,7 +35,9 @@ public class ExportService {
      * as separate CSV files inside a ZIP archive.
      */
     public void exportZip(String version, OutputStream outputStream) throws IOException {
-        List<Locale> locales = localeRepository.findAll();
+        List<Locale> locales = localeRepository.findAll().stream()
+                .sorted(Comparator.comparing(Locale::getSortOrder, Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
         List<String> localeIds = locales.stream().map(Locale::getId).toList();
 
         // Build CSV Headers: key, value_en, value_<locale1>, ...

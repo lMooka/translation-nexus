@@ -18,12 +18,6 @@ import org.springframework.web.context.request.WebRequest;
 @RequiredArgsConstructor
 public class GlobalExceptionHandler {
 
-  private static final Integer CONSTRAINT_VIOLATION_HTTP_STATUS = 400;
-  private static final String CONSTRAINT_VIOLATION_ERROR_CODE = "exception.request.constraint-violation";
-
-  private static final Integer RUNTIME_EXCEPTION_HTTP_STATUS = 412;
-  private static final String RUNTIME_EXCEPTION_ERROR_CODE = "exception.unhandled-exception";
-  public static final String NO_MESSAGE_EXCEPTION = "no-message-exception";
   public static final String UNKNOWN = "UNKNOWN";
   //@formatter:on
 

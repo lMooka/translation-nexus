@@ -6,6 +6,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.MDC;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -57,11 +58,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         authorities
                 );
                 SecurityContextHolder.getContext().setAuthentication(auth);
+                MDC.put("user", username);
             } catch (Exception ignored) {
                 // Invalid or expired token — request will fail authorization
             }
         }
 
-        chain.doFilter(request, response);
+        try {
+            chain.doFilter(request, response);
+        } finally {
+            MDC.remove("user");
+        }
     }
 }

@@ -15,6 +15,7 @@ public class Locale {
     private String id; // e.g. "pt", "es", "fr", "de", "ja"
     private String name; // e.g. "Portuguese", "Spanish", etc.
     private String googleCode; // e.g. "pt" or "pt-PT" representing the Google Translate API target language code
+    private Integer sortOrder;
 
     public Locale(String id, String name) {
         this.id = id;
