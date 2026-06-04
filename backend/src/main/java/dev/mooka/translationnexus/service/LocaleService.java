@@ -19,7 +19,9 @@ public class LocaleService {
     private final LocaleRepository localeRepository;
 
     public List<LocaleEntity> getAllLocales() {
-        return localeRepository.findAll();
+        return localeRepository.findAll().stream()
+                .sorted(java.util.Comparator.comparing(LocaleEntity::getSortOrder, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
+                .toList();
     }
 
     public Optional<LocaleEntity> getLocaleById(String id) {

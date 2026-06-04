@@ -9,8 +9,37 @@
           <option [value]="v.version">{{ v.version }}{{ v.active ? ' (Active)' : ' (Locked)' }}</option>
         }
       </select>
-      <input [(ngModel)]="filterCategory" placeholder="Category…" (keyup.enter)="applyFilters()">
-      <input [(ngModel)]="filterTag"      placeholder="Tag…"      (keyup.enter)="applyFilters()">
+      <div class="autocomplete-container">
+        <input [(ngModel)]="filterCategory" 
+               placeholder="Category…" 
+               (keyup.enter)="applyFilters()"
+               (focus)="showSuggestions = true"
+               (blur)="onCategoryBlur()">
+        @if (filterCategory) {
+          <button class="clear-btn" (click)="clearCategory(); $event.stopPropagation()" type="button" title="Clear category">&times;</button>
+        }
+        @if (showSuggestions && getFilteredCategories().length > 0) {
+          <ul class="suggestions-list">
+            @for (cat of getFilteredCategories(); track cat.name) {
+              <li (mousedown)="selectCategory(cat.name)">{{ cat.name }}</li>
+            }
+          </ul>
+        }
+      </div>
+      <div class="tags-filter-container">
+        <div class="tags-chips">
+          @for (tag of filterTags; track tag) {
+            <span class="filter-tag-chip">
+              {{ tag }}
+              <button type="button" class="remove-tag-btn" (click)="removeTag(tag)">&times;</button>
+            </span>
+          }
+        </div>
+        <input [(ngModel)]="inputTag" 
+               placeholder="Tag…" 
+               (keyup.enter)="addTag()"
+               class="tag-input">
+      </div>
       <input [(ngModel)]="filterSearch"   placeholder="Search key or source text…" class="search-wide" (keyup.enter)="applyFilters()">
       <div class="multiselect-container">
         <button type="button" class="multiselect-trigger" (click)="showLocaleDropdown = !showLocaleDropdown; $event.stopPropagation()">

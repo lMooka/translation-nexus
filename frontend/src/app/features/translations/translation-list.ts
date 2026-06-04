@@ -20,9 +20,11 @@ export class TranslationListComponent implements OnInit {
 
   // Filters
   filterVersion = '';
-  filterTag = '';
+  filterTags: string[] = [];
+  inputTag = '';
   filterCategory = '';
   filterSearch = '';
+  showSuggestions = false;
 
   // Inline edit state: docId → locale → draft value
   drafts: Record<string, Record<string, string>> = {};
@@ -115,7 +117,7 @@ export class TranslationListComponent implements OnInit {
     this.loading = true;
     this.api.listTranslations({
       version: this.filterVersion || undefined,
-      tag: this.filterTag || undefined,
+      tag: this.filterTags.length > 0 ? this.filterTags : undefined,
       category: this.filterCategory || undefined,
       search: this.filterSearch || undefined,
       page, size: 15
@@ -275,6 +277,46 @@ export class TranslationListComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  getFilteredCategories(): Category[] {
+    const val = this.filterCategory.toLowerCase().trim();
+    if (!val) {
+      return this.categories;
+    }
+    return this.categories.filter(c => c.name.toLowerCase().includes(val));
+  }
+
+  selectCategory(name: string) {
+    this.filterCategory = name;
+    this.showSuggestions = false;
+    this.applyFilters();
+  }
+
+  onCategoryBlur() {
+    setTimeout(() => {
+      this.showSuggestions = false;
+      this.cdr.detectChanges();
+    }, 200);
+  }
+
+  clearCategory() {
+    this.filterCategory = '';
+    this.applyFilters();
+  }
+
+  addTag() {
+    const tag = this.inputTag.trim().toLowerCase();
+    if (tag && !this.filterTags.includes(tag)) {
+      this.filterTags.push(tag);
+      this.inputTag = '';
+      this.applyFilters();
+    }
+  }
+
+  removeTag(tag: string) {
+    this.filterTags = this.filterTags.filter(t => t !== tag);
+    this.applyFilters();
   }
 
   resolveFilename(doc: TranslationDocument): string {

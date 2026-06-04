@@ -1,0 +1,19 @@
+# Build stage
+FROM ghcr.io/graalvm/native-image-community:21-ol9 AS build
+WORKDIR /app
+
+# Install Maven
+RUN microdnf install -y maven
+
+COPY backend/pom.xml .
+RUN mvn dependency:go-offline -B
+
+COPY backend/src ./src
+RUN mvn -Pnative native:compile -DskipTests -B
+
+# Run stage
+FROM debian:12-slim
+WORKDIR /app
+COPY --from=build /app/target/translation-nexus-backend app
+EXPOSE 8080
+ENTRYPOINT ["./app"]

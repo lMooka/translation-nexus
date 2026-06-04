@@ -62,7 +62,7 @@ public class TranslationController {
     })
     public ResponseEntity<Page<TranslationDocumentDTO>> list(
             @Parameter(description = "Filter translations by version (e.g. 1.0)") @RequestParam(required = false) String version,
-            @Parameter(description = "Filter translations by tag") @RequestParam(required = false) String tag,
+            @Parameter(description = "Filter translations by tag") @RequestParam(required = false) List<String> tag,
             @Parameter(description = "Filter translations by category") @RequestParam(required = false) String category,
             @Parameter(description = "Search query matching keyCode or English base value") @RequestParam(required = false) String search,
             @Parameter(description = "Zero-based page index") @RequestParam(defaultValue = "0") int page,

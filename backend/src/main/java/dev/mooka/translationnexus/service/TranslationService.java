@@ -73,15 +73,18 @@ public class TranslationService {
 
     // ─── Listing & Filtering ─────────────────────────────────────────────────
 
-    public Page<TranslationEntity> findAll(String version, String tag, String category,
-                                             String search, Pageable pageable) {
+    public Page<TranslationEntity> findAll(String version, List<String> tags, String category,
+            String search, Pageable pageable) {
         Query query = new Query();
 
         if (version != null && !version.isBlank()) {
             query.addCriteria(Criteria.where("version").is(version));
         }
-        if (tag != null && !tag.isBlank()) {
-            query.addCriteria(Criteria.where("tags").in(tag));
+        if (tags != null && !tags.isEmpty()) {
+            List<String> cleanTags = tags.stream().filter(t -> t != null && !t.isBlank()).toList();
+            if (!cleanTags.isEmpty()) {
+                query.addCriteria(Criteria.where("tags").in(cleanTags));
+            }
         }
         if (category != null && !category.isBlank()) {
             query.addCriteria(Criteria.where("category").is(category));
@@ -89,8 +92,7 @@ public class TranslationService {
         if (search != null && !search.isBlank()) {
             query.addCriteria(new Criteria().orOperator(
                     Criteria.where("keyCode").regex(search, "i"),
-                    Criteria.where("baseValue").regex(search, "i")
-            ));
+                    Criteria.where("baseValue").regex(search, "i")));
         }
 
         long total = mongoTemplate.count(query, TranslationEntity.class);
@@ -103,8 +105,8 @@ public class TranslationService {
     // ─── Translation Edit ─────────────────────────────────────────────────────
 
     public TranslationEntity updateTranslation(String id, String locale,
-                                                  TranslationUpdateDTO dto,
-                                                  String username, boolean isReviewer) throws BusinessException {
+            TranslationUpdateDTO dto,
+            String username, boolean isReviewer) throws BusinessException {
         TranslationEntity entity = translationRepository.findById(id)
                 .orElseThrow(TranslationNotFoundException::new);
 
@@ -121,7 +123,8 @@ public class TranslationService {
         try {
             model.updateTranslation(locale, dto.value(), username, isReviewer);
         } catch (PlaceholderMismatchException e) {
-            log.warn("Placeholder validation failed for key: {} and locale: {}. Expected placeholders: {}", model.getKeyCode(), locale, PlaceholderValidator.extract(model.getBaseValue()));
+            log.warn("Placeholder validation failed for key: {} and locale: {}. Expected placeholders: {}",
+                    model.getKeyCode(), locale, PlaceholderValidator.extract(model.getBaseValue()));
             meterRegistry.counter("translation_validation_failures_total", "locale", locale).increment();
             throw e;
         }
@@ -177,7 +180,8 @@ public class TranslationService {
         return entity.getHistory();
     }
 
-    public TranslationEntity updateStatus(String id, String locale, TranslationStatusEnum status, String username) throws BusinessException {
+    public TranslationEntity updateStatus(String id, String locale, TranslationStatusEnum status, String username)
+            throws BusinessException {
         TranslationEntity entity = translationRepository.findById(id)
                 .orElseThrow(TranslationNotFoundException::new);
 

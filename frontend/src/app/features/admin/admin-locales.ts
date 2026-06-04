@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { Locale } from '../../core/models/translation.model';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-admin-locales',
@@ -26,6 +27,10 @@ export class AdminLocalesComponent implements OnInit {
   localeId = '';
   name = '';
   googleCode = '';
+  sortOrder = 0;
+
+  // Drag State
+  draggedIndex: number | null = null;
 
   constructor(
     private api: ApiService,
@@ -57,6 +62,7 @@ export class AdminLocalesComponent implements OnInit {
     this.localeId = '';
     this.name = '';
     this.googleCode = '';
+    this.sortOrder = this.locales.length + 1;
     this.showModal = true;
   }
 
@@ -66,6 +72,7 @@ export class AdminLocalesComponent implements OnInit {
     this.localeId = locale.id;
     this.name = locale.name;
     this.googleCode = locale.googleCode || '';
+    this.sortOrder = locale.sortOrder || 0;
     this.showModal = true;
   }
 
@@ -78,7 +85,8 @@ export class AdminLocalesComponent implements OnInit {
     const payload: Locale = {
       id: this.localeId.trim().toLowerCase(),
       name: this.name.trim(),
-      googleCode: this.googleCode.trim() || undefined
+      googleCode: this.googleCode.trim() || undefined,
+      sortOrder: this.sortOrder
     };
 
     this.saving = true;
@@ -125,5 +133,55 @@ export class AdminLocalesComponent implements OnInit {
         alert(err.error?.message || err.error || 'Error deleting language');
       }
     });
+  }
+
+  // ── Drag & Drop Rows ──────────────────────────────────────────────────
+  onDragStart(event: DragEvent, index: number) {
+    this.draggedIndex = index;
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', index.toString());
+    }
+  }
+
+  onDragOver(event: DragEvent) {
+    event.preventDefault();
+  }
+
+  onDrop(event: DragEvent, targetIndex: number) {
+    event.preventDefault();
+    if (this.draggedIndex === null || this.draggedIndex === targetIndex) {
+      return;
+    }
+
+    const draggedLocale = this.locales[this.draggedIndex];
+    this.locales.splice(this.draggedIndex, 1);
+    this.locales.splice(targetIndex, 0, draggedLocale);
+    this.draggedIndex = null;
+
+    // Recalculate sortOrder for all items
+    const updates = this.locales.map((locale, idx) => {
+      const newSortOrder = idx + 1;
+      const originalSortOrder = locale.sortOrder;
+      
+      if (originalSortOrder !== newSortOrder) {
+        locale.sortOrder = newSortOrder;
+        return this.api.updateLocale(locale.id, locale);
+      }
+      return null;
+    }).filter(obs => obs !== null);
+
+    if (updates.length > 0) {
+      this.loading = true;
+      forkJoin(updates).subscribe({
+        next: () => {
+          this.loadLocales();
+        },
+        error: (err) => {
+          alert('Error updating sort order: ' + (err.error?.message || err.error || err.message));
+          this.loadLocales();
+        }
+      });
+    }
   }
 }

@@ -72,6 +72,7 @@ export interface Locale {
   id: string;
   name: string;
   googleCode?: string;
+  sortOrder?: number;
 }
 
 export interface AppVersion {

@@ -1,1 +1,25 @@
 @import './admin-users.css';
+
+.draggable-row {
+  cursor: grab;
+  user-select: none;
+}
+
+.draggable-row:active {
+  cursor: grabbing;
+  background: var(--bg-hover) !important;
+}
+
+.drag-handle {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  cursor: grab;
+  text-align: center;
+  user-select: none;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+
+.draggable-row:hover .drag-handle {
+  opacity: 1;
+}

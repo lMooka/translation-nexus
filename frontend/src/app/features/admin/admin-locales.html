@@ -11,6 +11,8 @@
     <table *ngIf="!loading && locales.length > 0">
       <thead>
         <tr>
+          <th style="width: 50px;"></th>
+          <th>Order</th>
           <th>Language Code</th>
           <th>Descriptive Name</th>
           <th>Google Translate Code</th>
@@ -18,7 +20,16 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let locale of locales">
+        <tr *ngFor="let locale of locales; let i = index" 
+            draggable="true"
+            (dragstart)="onDragStart($event, i)"
+            (dragover)="onDragOver($event)"
+            (drop)="onDrop($event, i)"
+            class="draggable-row">
+          <td class="drag-handle">☰</td>
+          <td>
+            <span class="mono">{{ locale.sortOrder }}</span>
+          </td>
           <td>
             <span class="tag-chip" style="font-family: monospace; text-transform: uppercase;">{{ locale.id }}</span>
           </td>
@@ -27,7 +38,7 @@
           </td>
           <td>
             <span class="mono text-muted" *ngIf="!locale.googleCode">—</span>
-            <span class="tag-chip" style="background: rgba(124, 107, 255, 0.1); color: var(--accent); font-family: monospace;" *ngIf="locale.googleCode">{{ locale.googleCode }}</span>
+            <span class="tag-chip" style="background: rgba(124, 107, 255, 0.15); color: var(--accent); font-family: monospace;" *ngIf="locale.googleCode">{{ locale.googleCode }}</span>
           </td>
           <td class="actions-cell">
             <div class="actions-wrapper">
@@ -59,6 +70,11 @@
         <div class="field">
           <label>Google Translate Code</label>
           <input [(ngModel)]="googleCode" placeholder="e.g. pt (optional)">
+        </div>
+
+        <div class="field">
+          <label>Sort Order</label>
+          <input type="number" [(ngModel)]="sortOrder" placeholder="e.g. 1">
         </div>
       </div>
 

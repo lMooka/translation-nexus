@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { ConfigService } from './config.service';
 import {
   HistoryEntry,
   LoginResponse,
@@ -18,9 +18,14 @@ import {
 @Injectable({ providedIn: 'root' })
 export class ApiService {
 
-  private base = environment.apiUrl;
+  constructor(
+    private http: HttpClient,
+    private configService: ConfigService
+  ) {}
 
-  constructor(private http: HttpClient) {}
+  private get base(): string {
+    return this.configService.apiUrl;
+  }
 
   // ── Auth ─────────────────────────────────────────────────────────────
   login(username: string, password: string): Observable<LoginResponse> {
@@ -29,12 +34,20 @@ export class ApiService {
 
   // ── Translations ─────────────────────────────────────────────────────
   listTranslations(filters: {
-    version?: string; tag?: string; category?: string; search?: string;
+    version?: string; tag?: string | string[]; category?: string; search?: string;
     page?: number; size?: number;
   }): Observable<Page<TranslationDocument>> {
     let params = new HttpParams();
     if (filters.version)  params = params.set('version', filters.version);
-    if (filters.tag)      params = params.set('tag', filters.tag);
+    if (filters.tag) {
+      if (Array.isArray(filters.tag)) {
+        filters.tag.forEach(t => {
+          params = params.append('tag', t);
+        });
+      } else {
+        params = params.set('tag', filters.tag);
+      }
+    }
     if (filters.category) params = params.set('category', filters.category);
     if (filters.search)   params = params.set('search', filters.search);
     params = params.set('page', filters.page ?? 0);
