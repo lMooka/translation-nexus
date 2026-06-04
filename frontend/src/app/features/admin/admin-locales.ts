@@ -31,6 +31,7 @@ export class AdminLocalesComponent implements OnInit {
 
   // Drag State
   draggedIndex: number | null = null;
+  draggedOverIndex: number | null = null;
 
   constructor(
     private api: ApiService,
@@ -144,13 +145,33 @@ export class AdminLocalesComponent implements OnInit {
     }
   }
 
-  onDragOver(event: DragEvent) {
+  onDragOver(event: DragEvent, index: number) {
     event.preventDefault();
+    if (this.draggedIndex !== index) {
+      this.draggedOverIndex = index;
+      this.cdr.detectChanges();
+    }
+  }
+
+  onDragLeave(event: DragEvent, index: number) {
+    if (this.draggedOverIndex === index) {
+      this.draggedOverIndex = null;
+      this.cdr.detectChanges();
+    }
+  }
+
+  onDragEnd() {
+    this.draggedIndex = null;
+    this.draggedOverIndex = null;
+    this.cdr.detectChanges();
   }
 
   onDrop(event: DragEvent, targetIndex: number) {
     event.preventDefault();
+    this.draggedOverIndex = null;
+    
     if (this.draggedIndex === null || this.draggedIndex === targetIndex) {
+      this.draggedIndex = null;
       return;
     }
 
@@ -182,6 +203,8 @@ export class AdminLocalesComponent implements OnInit {
           this.loadLocales();
         }
       });
+    } else {
+      this.cdr.detectChanges();
     }
   }
 }

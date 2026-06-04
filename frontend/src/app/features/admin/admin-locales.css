@@ -23,3 +23,7 @@
 .draggable-row:hover .drag-handle {
   opacity: 1;
 }
+
+.draggable-row.drag-over {
+  border-top: 2px solid var(--accent) !important;
+}

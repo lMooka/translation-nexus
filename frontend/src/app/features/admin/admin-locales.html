@@ -23,8 +23,11 @@
         <tr *ngFor="let locale of locales; let i = index" 
             draggable="true"
             (dragstart)="onDragStart($event, i)"
-            (dragover)="onDragOver($event)"
+            (dragover)="onDragOver($event, i)"
+            (dragleave)="onDragLeave($event, i)"
+            (dragend)="onDragEnd()"
             (drop)="onDrop($event, i)"
+            [class.drag-over]="draggedIndex !== null && draggedOverIndex === i"
             class="draggable-row">
           <td class="drag-handle">☰</td>
           <td>
