@@ -56,9 +56,9 @@
           <input [(ngModel)]="username" placeholder="e.g. jdoe" [disabled]="isEditMode">
         </div>
 
-        <div class="field" *ngIf="!isEditMode">
+        <div class="field">
           <label>Password</label>
-          <input type="password" [(ngModel)]="password" placeholder="Password">
+          <input type="password" [(ngModel)]="password" [placeholder]="isEditMode ? 'Leave blank to keep unchanged' : 'Password'">
         </div>
 
         <div class="field">

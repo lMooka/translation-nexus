@@ -66,6 +66,7 @@ export interface UserCreateDTO {
 export interface UserUpdateDTO {
   roles?: string[];
   allowedLocales?: string[];
+  password?: string;
 }
 
 export interface Locale {

@@ -113,7 +113,8 @@ export class AdminUsersComponent implements OnInit {
     if (this.isEditMode && this.selectedUserId) {
       this.api.updateUser(this.selectedUserId, {
         roles: rolesList,
-        allowedLocales: this.isTranslatorSelected() ? this.getLocalesList() : []
+        allowedLocales: this.isTranslatorSelected() ? this.getLocalesList() : [],
+        password: this.password || undefined
       }).subscribe({
         next: () => {
           this.saving = false;

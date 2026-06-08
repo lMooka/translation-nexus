@@ -62,6 +62,9 @@ public class UserService {
 
         model.setRoles(upperRoles);
         model.setAllowedLocales(dto.allowedLocales());
+        if (dto.password() != null && !dto.password().isBlank()) {
+            model.setPasswordHash(passwordEncoder.encode(dto.password()));
+        }
 
         UserEntity user = mapperService.toEntity(model);
         return mapperService.toDTO(userRepository.save(user));

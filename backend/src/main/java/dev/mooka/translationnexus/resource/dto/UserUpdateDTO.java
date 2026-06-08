@@ -6,5 +6,6 @@ import java.util.List;
 
 public record UserUpdateDTO(
     @NotEmpty List<String> roles,
-    @NotNull List<String> allowedLocales
+    @NotNull List<String> allowedLocales,
+    String password
 ) {}
