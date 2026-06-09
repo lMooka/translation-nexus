@@ -1,7 +1,7 @@
 <p align="center">
   <h1 align="center">🌐 Translation Nexus</h1>
   <p align="center">
-    <strong>Enterprise-grade Translation Management System</strong><br>
+    <strong>Translation Management System</strong><br>
     Coordinate, translate, review, and export localized content across multiple versions, categories, and languages — with role-based access control, automated translation, and observability built in.
   </p>
 </p>
