@@ -40,6 +40,8 @@ public class TranslationEntity {
     private Map<String, TranslationValueEntity> translations = new HashMap<>();
     @Builder.Default
     private List<HistoryEntryEntity> history = new ArrayList<>();
+    @Builder.Default
+    private Integer priority = 3;
     private Instant createdAt;
     private Instant updatedAt;
 }

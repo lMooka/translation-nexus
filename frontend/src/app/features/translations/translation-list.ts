@@ -388,6 +388,18 @@ export class TranslationListComponent implements OnInit {
     }
   }
 
+  updatePriority(doc: TranslationDocument, priority: number) {
+    this.api.updateTranslationPriority(doc.id, priority).subscribe({
+      next: updated => {
+        doc.priority = updated.priority;
+        this.cdr.detectChanges();
+      },
+      error: err => {
+        alert(err.error?.message ?? err.error ?? 'Error updating priority');
+      }
+    });
+  }
+
   deleteKey(doc: TranslationDocument) {
     if (!confirm(`Are you sure you want to delete translation key "${doc.keyCode}"?`)) {
       return;

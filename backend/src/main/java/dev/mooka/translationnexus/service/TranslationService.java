@@ -46,7 +46,7 @@ public class TranslationService {
                 .orElseThrow(() -> new GenericBusinessException("No active version configured."));
         String version = activeVersion.getVersion();
 
-        categoryService.validateCategoryAndPath(dto.category(), dto.keyCode());
+        dev.mooka.translationnexus.domain.entity.CategoryEntity category = categoryService.validateCategoryAndPath(dto.category(), dto.keyCode());
 
         if (translationRepository.existsByKeyCodeAndVersion(dto.keyCode(), version)) {
             throw new TranslationKeyAlreadyExistsException(dto.keyCode(), version);
@@ -61,6 +61,7 @@ public class TranslationService {
                 .baseValue(dto.baseValue())
                 .translations(new HashMap<>())
                 .history(new ArrayList<>())
+                .priority(category.getPriority() != null ? category.getPriority() : 3)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
@@ -195,6 +196,27 @@ public class TranslationService {
         model.updateStatus(locale, status, username);
 
         TranslationEntity updatedEntity = mapperService.toEntity(model);
+        return translationRepository.save(updatedEntity);
+    }
+
+    public TranslationEntity updatePriority(String id, int priority) throws BusinessException {
+        TranslationEntity entity = translationRepository.findById(id)
+                .orElseThrow(TranslationNotFoundException::new);
+        AppVersionEntity activeVersion = versionService.getActiveVersion()
+                .orElseThrow(() -> new GenericBusinessException("No active version configured."));
+        if (!entity.getVersion().equals(activeVersion.getVersion())) {
+            throw new VersionLockedException();
+        }
+        if (priority < 1 || priority > 5) {
+            throw new GenericBusinessException("Priority must be between 1 and 5.");
+        }
+
+        TranslationModel model = mapperService.toModel(entity);
+        model.setPriority(priority);
+        model.setUpdatedAt(Instant.now());
+
+        TranslationEntity updatedEntity = mapperService.toEntity(model);
+        log.info("Translation key priority updated: {} to {}", entity.getKeyCode(), priority);
         return translationRepository.save(updatedEntity);
     }
 

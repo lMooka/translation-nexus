@@ -12,6 +12,7 @@
       <thead>
         <tr>
           <th>Category Name</th>
+          <th>Default Priority</th>
           <th>Path Mappings & Target Files</th>
           <th class="actions-header">Actions</th>
         </tr>
@@ -22,6 +23,16 @@
             <span class="badge"
               style="background: rgba(124, 107, 255, 0.15); color: var(--accent); padding: 4px 10px; border-radius: 999px;">{{
               category.name }}</span>
+          </td>
+          <td>
+            <div style="display: flex; gap: 2px; align-items: center; height: 16px;" [title]="'Default priority: ' + (category.priority || 3)">
+              @for (bar of [1, 2, 3, 4, 5]; track bar) {
+              <span 
+                [style.background-color]="bar <= (category.priority || 3) ? '#f59e0b' : '#e5e7eb'"
+                style="display: inline-block; width: 4px; height: 12px; border-radius: 1px;">
+              </span>
+              }
+            </div>
           </td>
           <td>
             <div style="display: flex; flex-direction: column; gap: 6px;">
@@ -52,6 +63,17 @@
         <div class="field">
           <label>Category Name</label>
           <input [(ngModel)]="name" placeholder="e.g. ITEM" [disabled]="isEditMode">
+        </div>
+
+        <div class="field">
+          <label>Default Priority</label>
+          <select [(ngModel)]="priority" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text);">
+            <option [value]="1">1 - Lowest</option>
+            <option [value]="2">2 - Low</option>
+            <option [value]="3">3 - Medium</option>
+            <option [value]="4">4 - High</option>
+            <option [value]="5">5 - Highest</option>
+          </select>
         </div>
 
         <div class="field">

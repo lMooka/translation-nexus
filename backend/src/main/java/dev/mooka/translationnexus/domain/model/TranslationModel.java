@@ -30,6 +30,8 @@ public class TranslationModel {
     private Map<String, TranslationValueModel> translations = new HashMap<>();
     @Builder.Default
     private List<HistoryEntryModel> history = new ArrayList<>();
+    @Builder.Default
+    private Integer priority = 3;
     private Instant createdAt;
     private Instant updatedAt;
 

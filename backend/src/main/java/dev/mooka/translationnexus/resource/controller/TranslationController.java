@@ -67,7 +67,11 @@ public class TranslationController {
             @Parameter(description = "Search query matching keyCode or English base value") @RequestParam(required = false) String search,
             @Parameter(description = "Zero-based page index") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Size of each page") @RequestParam(defaultValue = "20") int size) {
-        Page<TranslationDocumentDTO> pageDto = translationService.findAll(version, tag, category, search, PageRequest.of(page, size))
+        Page<TranslationDocumentDTO> pageDto = translationService.findAll(version, tag, category, search, 
+                PageRequest.of(page, size, org.springframework.data.domain.Sort.by(
+                        org.springframework.data.domain.Sort.Order.desc("priority"),
+                        org.springframework.data.domain.Sort.Order.asc("keyCode")
+                )))
                 .map(mapperService::toDTO);
         return ResponseEntity.ok(pageDto);
     }
@@ -182,6 +186,20 @@ public class TranslationController {
                 .map(mapperService::toDTO)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(localesList);
+    }
+
+    @PutMapping("/{id}/priority")
+    @Operation(summary = "Update translation priority. MANAGER only.", description = "Allows a MANAGER to change the priority of a translation document.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Translation priority updated successfully"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - requires MANAGER role"),
+            @ApiResponse(responseCode = "404", description = "Translation key not found")
+    })
+    public ResponseEntity<TranslationDocumentDTO> updatePriority(
+            @PathVariable String id,
+            @RequestParam int priority) throws BusinessException {
+        TranslationEntity updated = translationService.updatePriority(id, priority);
+        return ResponseEntity.ok(mapperService.toDTO(updated));
     }
 
     @DeleteMapping("/{id}")

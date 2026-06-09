@@ -90,6 +90,12 @@ export class ApiService {
     return this.http.put<TranslationDocument>(`${this.base}/translations/${id}/${locale}`, { value });
   }
 
+  updateTranslationPriority(id: string, priority: number): Observable<TranslationDocument> {
+    return this.http.put<TranslationDocument>(`${this.base}/translations/${id}/priority`, {}, {
+      params: { priority }
+    });
+  }
+
   getPending(): Observable<TranslationDocument[]> {
     return this.http.get<TranslationDocument[]>(`${this.base}/translations/pending`);
   }

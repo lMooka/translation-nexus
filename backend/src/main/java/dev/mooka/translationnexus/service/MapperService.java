@@ -105,6 +105,7 @@ public class MapperService {
                 .id(entity.getId())
                 .name(entity.getName())
                 .pathMappings(mappings)
+                .priority(entity.getPriority())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
@@ -121,6 +122,7 @@ public class MapperService {
                 .id(dto.getId())
                 .name(dto.getName())
                 .pathMappings(mappings)
+                .priority(dto.getPriority())
                 .createdAt(dto.getCreatedAt())
                 .updatedAt(dto.getUpdatedAt())
                 .build();
@@ -137,6 +139,7 @@ public class MapperService {
                 .id(entity.getId())
                 .name(entity.getName())
                 .pathMappings(mappings)
+                .priority(entity.getPriority())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
@@ -153,6 +156,7 @@ public class MapperService {
                 .id(model.getId())
                 .name(model.getName())
                 .pathMappings(mappings)
+                .priority(model.getPriority())
                 .createdAt(model.getCreatedAt())
                 .updatedAt(model.getUpdatedAt())
                 .build();
@@ -255,6 +259,7 @@ public class MapperService {
                 .baseValue(entity.getBaseValue())
                 .translations(translationsDTO)
                 .history(historyDTO)
+                .priority(entity.getPriority())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
@@ -285,6 +290,7 @@ public class MapperService {
                 .baseValue(entity.getBaseValue())
                 .translations(translationsModel)
                 .history(historyModel)
+                .priority(entity.getPriority())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
@@ -315,6 +321,7 @@ public class MapperService {
                 .baseValue(model.getBaseValue())
                 .translations(translationsEntity)
                 .history(historyEntity)
+                .priority(model.getPriority())
                 .createdAt(model.getCreatedAt())
                 .updatedAt(model.getUpdatedAt())
                 .build();

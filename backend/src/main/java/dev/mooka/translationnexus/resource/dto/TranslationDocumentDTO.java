@@ -22,6 +22,8 @@ public class TranslationDocumentDTO {
     private Map<String, TranslationValueDTO> translations = new HashMap<>();
     @Builder.Default
     private List<HistoryEntryDTO> history = new ArrayList<>();
+    @Builder.Default
+    private Integer priority = 3;
     private Instant createdAt;
     private Instant updatedAt;
 }

@@ -25,6 +25,7 @@ export class AdminCategoriesComponent implements OnInit {
   // Form Fields
   name = '';
   pathMappings: PathMapping[] = [];
+  priority = 3;
 
   constructor(
     private api: ApiService,
@@ -55,6 +56,7 @@ export class AdminCategoriesComponent implements OnInit {
     this.selectedCategoryId = null;
     this.name = '';
     this.pathMappings = [{ pattern: '', filename: '' }];
+    this.priority = 3;
     this.showModal = true;
   }
 
@@ -63,6 +65,7 @@ export class AdminCategoriesComponent implements OnInit {
     this.selectedCategoryId = category.id || null;
     this.name = category.name;
     this.pathMappings = category.pathMappings ? category.pathMappings.map(pm => ({ ...pm })) : [];
+    this.priority = category.priority || 3;
     this.showModal = true;
   }
 
@@ -106,7 +109,8 @@ export class AdminCategoriesComponent implements OnInit {
 
     const categoryPayload: Category = {
       name: this.name.trim(),
-      pathMappings: this.pathMappings
+      pathMappings: this.pathMappings,
+      priority: Number(this.priority)
     };
 
     if (this.isEditMode && this.selectedCategoryId) {

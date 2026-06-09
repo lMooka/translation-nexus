@@ -15,6 +15,8 @@ public class CategoryModel {
     private String name;
     @Builder.Default
     private List<PathMappingModel> pathMappings = new ArrayList<>();
+    @Builder.Default
+    private Integer priority = 3;
     private Instant createdAt;
     private Instant updatedAt;
 }

@@ -25,7 +25,7 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final TranslationRepository translationRepository;
 
-    public void validateCategoryAndPath(String categoryName, String keyCode) throws BusinessException {
+    public CategoryEntity validateCategoryAndPath(String categoryName, String keyCode) throws BusinessException {
         CategoryEntity category = categoryRepository.findByNameIgnoreCase(categoryName)
                 .orElseThrow(() -> new CategoryNotFoundException(categoryName));
 
@@ -42,6 +42,7 @@ public class CategoryService {
         if (!matched) {
             throw new InvalidKeyPathException(keyCode, categoryName);
         }
+        return category;
     }
 
     public List<CategoryEntity> getAllCategories() {
@@ -80,6 +81,7 @@ public class CategoryService {
         CategoryEntity doc = CategoryEntity.builder()
                 .name(cleanName)
                 .pathMappings(mappings)
+                .priority(category.getPriority() != null ? category.getPriority() : 3)
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
@@ -123,6 +125,7 @@ public class CategoryService {
 
         existing.setName(cleanName);
         existing.setPathMappings(mappings);
+        existing.setPriority(category.getPriority() != null ? category.getPriority() : 3);
         existing.setUpdatedAt(Instant.now());
 
         log.info("Category updated: {}", id);

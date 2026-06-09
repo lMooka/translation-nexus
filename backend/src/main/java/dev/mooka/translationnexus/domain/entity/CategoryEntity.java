@@ -26,6 +26,9 @@ public class CategoryEntity {
     @Builder.Default
     private List<PathMappingEntity> pathMappings = new ArrayList<>();
 
+    @Builder.Default
+    private Integer priority = 3;
+
     private Instant createdAt;
 
     private Instant updatedAt;

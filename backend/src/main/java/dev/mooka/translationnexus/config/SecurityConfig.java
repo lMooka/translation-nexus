@@ -48,6 +48,7 @@ public class SecurityConfig {
                         // ADMIN-only
                         .requestMatchers("/api/users/**").hasRole(Roles.ADMIN)
                         .requestMatchers(HttpMethod.POST, "/api/translations/keys").hasRole(Roles.MANAGER)
+                        .requestMatchers(HttpMethod.PUT, "/api/translations/*/priority").hasRole(Roles.MANAGER)
                         .requestMatchers(HttpMethod.DELETE, "/api/translations/**").hasRole(Roles.MANAGER)
                         .requestMatchers(HttpMethod.POST, "/api/versions").hasRole(Roles.MANAGER)
                         .requestMatchers(HttpMethod.POST, "/api/categories").hasRole(Roles.MANAGER)

@@ -24,6 +24,7 @@ export interface TranslationDocument {
   baseValue: string;
   translations: Record<string, TranslationValue>;
   history: HistoryEntry[];
+  priority?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -92,6 +93,7 @@ export interface Category {
   id?: string;
   name: string;
   pathMappings: PathMapping[];
+  priority?: number;
   createdAt?: string;
   updatedAt?: string;
 }
