@@ -102,6 +102,16 @@ export class ApiService {
     });
   }
 
+  updateTags(id: string, tags: string[]): Observable<TranslationDocument> {
+    return this.http.put<TranslationDocument>(`${this.base}/translations/${id}/tags`, tags);
+  }
+
+  updateBaseValue(id: string, baseValue: string): Observable<TranslationDocument> {
+    return this.http.put<TranslationDocument>(`${this.base}/translations/${id}/base`, {}, {
+      params: { baseValue }
+    });
+  }
+
   getPending(): Observable<TranslationDocument[]> {
     return this.http.get<TranslationDocument[]>(`${this.base}/translations/pending`);
   }

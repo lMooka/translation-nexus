@@ -73,7 +73,10 @@ public class ExportService {
 
                 // Find translations for this path mapping
                 for (TranslationEntity doc : allDocs) {
-                      if (category.getName().equalsIgnoreCase(doc.getCategory())) {
+                    if (doc.getTags() != null && doc.getTags().stream().anyMatch(t -> t.equalsIgnoreCase("Obsolete"))) {
+                        continue;
+                    }
+                    if (category.getName().equalsIgnoreCase(doc.getCategory())) {
                         if (CategoryValidationHelper.matchPath(doc.getKeyCode(), pm.getPattern())) {
                             String alias = CategoryValidationHelper.extractAlias(doc.getKeyCode(), pm.getPattern());
                             List<String> row = new ArrayList<>();

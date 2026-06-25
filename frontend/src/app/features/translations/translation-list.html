@@ -119,10 +119,27 @@
               }
 
             </div>
-            @if (doc.tags && doc.tags.length > 0) {
-            <div class="meta-row" style="margin-top: 4px;">
-              @for (tag of doc.tags; track tag) {
-              <span class="tag-chip">{{ tag.toUpperCase() }}</span>
+            @if (doc.tags || auth.isManager()) {
+            <div class="meta-row" style="margin-top: 4px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+              @if (auth.isManager() && editingTagsDocId === doc.id) {
+                <input [(ngModel)]="tagsDraft" (keyup.enter)="saveTags(doc)" (keyup.escape)="editingTagsDocId = null" 
+                       style="font-size: 11px; padding: 2px 6px; height: auto; width: 140px; margin: 0;">
+                <button class="btn-primary btn-sm" (click)="saveTags(doc)" style="padding: 1px 4px; font-size: 10px;">✓</button>
+                <button class="btn-ghost btn-sm" (click)="editingTagsDocId = null" style="padding: 1px 4px; font-size: 10px;">✗</button>
+              } @else {
+                @for (tag of doc.tags; track tag) {
+                  <span class="tag-chip" 
+                        [class.tag-skip]="tag.toLowerCase() === 'skip'"
+                        [class.tag-obsolete]="tag.toLowerCase() === 'obsolete'"
+                        [class.tag-source-changed]="tag.toLowerCase() === 'source changed'"
+                        [class.tag-missing-source]="tag.toLowerCase() === 'missing source'"
+                        [class.tag-complete]="tag.toLowerCase() === 'complete'">
+                    {{ tag }}
+                  </span>
+                }
+                @if (auth.isManager()) {
+                  <button class="btn-ghost btn-sm" style="border: none; padding: 1px 4px; opacity: 0.5; font-size: 10px;" (click)="startEditTags(doc)">✏️ Tags</button>
+                }
               }
             </div>
             }
@@ -134,7 +151,24 @@
             </div>
             }
           </td>
-          <td class="base-cell text-sm">{{ doc.baseValue }}</td>
+          <td class="base-cell text-sm">
+            @if (auth.isManager() && editingBaseDocId === doc.id) {
+              <textarea [(ngModel)]="baseDraft" (keyup.escape)="editingBaseDocId = null" rows="3" style="width: 100%; min-width: 150px; font-size: 12px;"></textarea>
+              <div style="display: flex; gap: 4px; margin-top: 4px;">
+                <button class="btn-primary btn-sm" (click)="saveBaseValue(doc)">Save</button>
+                <button class="btn-ghost btn-sm" (click)="editingBaseDocId = null">Cancel</button>
+              </div>
+            } @else {
+              <span [style.cursor]="auth.isManager() ? 'pointer' : 'default'" 
+                    (dblclick)="auth.isManager() && startEditBase(doc)"
+                    [title]="auth.isManager() ? 'Double click to edit base value' : ''">
+                {{ doc.baseValue }}
+              </span>
+              @if (auth.isManager()) {
+                <button class="btn-ghost btn-sm" style="border: none; padding: 2px 4px; opacity: 0.5; margin-left: 4px;" (click)="startEditBase(doc)">✏️</button>
+              }
+            }
+          </td>
           @for (locale of getFilteredLocales(); track locale) {
           <td class="locale-cell">
             <div class="status-header">

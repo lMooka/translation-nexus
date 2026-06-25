@@ -27,6 +27,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Instant;
 import java.util.*;
 
+import dev.mooka.translationnexus.domain.enums.SystemTags;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -38,6 +40,7 @@ public class TranslationService {
     private final CategoryService categoryService;
     private final VersionService versionService;
     private final MapperService mapperService;
+    private final LocaleService localeService;
 
     // ─── Key Management ──────────────────────────────────────────────────────
 
@@ -69,6 +72,7 @@ public class TranslationService {
         log.info("Creating translation key: {} for version: {}", dto.keyCode(), version);
         meterRegistry.counter("translation_keys_created_total").increment();
 
+        updateAutomaticTags(entity);
         return translationRepository.save(entity);
     }
 
@@ -107,7 +111,7 @@ public class TranslationService {
 
     public TranslationEntity updateTranslation(String id, String locale,
             TranslationUpdateDTO dto,
-            String username, boolean isReviewer) throws BusinessException {
+            String username, boolean isReviewer, boolean isManagerOrAdmin) throws BusinessException {
         TranslationEntity entity = translationRepository.findById(id)
                 .orElseThrow(TranslationNotFoundException::new);
 
@@ -115,6 +119,24 @@ public class TranslationService {
                 .orElseThrow(() -> new GenericBusinessException("No active version configured."));
         if (!entity.getVersion().equals(activeVersion.getVersion())) {
             throw new VersionLockedException();
+        }
+
+        // Rule: Complete check
+        boolean hasCompleteTag = entity.getTags() != null && entity.getTags().stream().anyMatch(t -> t.equalsIgnoreCase(SystemTags.COMPLETE));
+        if (hasCompleteTag && !isManagerOrAdmin) {
+            dev.mooka.translationnexus.domain.entity.TranslationValueEntity existingVal = entity.getTranslations().get(locale);
+            if (existingVal != null && existingVal.getStatus() == TranslationStatusEnum.APPROVED) {
+                throw new GenericBusinessException("This key is marked as Complete. Approved translations cannot be modified by translators or reviewers.");
+            }
+        }
+
+        // Rule: Skip / Obsolete check
+        boolean hasSkipOrObsolete = entity.getTags() != null && entity.getTags().stream().anyMatch(t -> 
+                t.equalsIgnoreCase(SystemTags.SKIP) || t.equalsIgnoreCase(SystemTags.OBSOLETE)
+        );
+        boolean isPowerUser = isReviewer || isManagerOrAdmin;
+        if (hasSkipOrObsolete && !isPowerUser) {
+            throw new GenericBusinessException("This key is marked as Skip/Obsolete. Translators cannot edit it.");
         }
 
         // Map to domain model
@@ -136,6 +158,7 @@ public class TranslationService {
         log.info("Translation updated for key: {}, locale: {}, by user: {}", model.getKeyCode(), locale, username);
         meterRegistry.counter("translation_updates_total", "locale", locale).increment();
 
+        updateAutomaticTags(updatedEntity);
         return translationRepository.save(updatedEntity);
     }
 
@@ -152,7 +175,7 @@ public class TranslationService {
                 .toList();
     }
 
-    public TranslationEntity approveTranslation(String id, String locale, String username) throws BusinessException {
+    public TranslationEntity approveTranslation(String id, String locale, String username, boolean isManagerOrAdmin) throws BusinessException {
         TranslationEntity entity = translationRepository.findById(id)
                 .orElseThrow(TranslationNotFoundException::new);
 
@@ -160,6 +183,15 @@ public class TranslationService {
                 .orElseThrow(() -> new GenericBusinessException("No active version configured."));
         if (!entity.getVersion().equals(activeVersion.getVersion())) {
             throw new VersionLockedException();
+        }
+
+        // Rule: Complete check
+        boolean hasCompleteTag = entity.getTags() != null && entity.getTags().stream().anyMatch(t -> t.equalsIgnoreCase(SystemTags.COMPLETE));
+        if (hasCompleteTag && !isManagerOrAdmin) {
+            dev.mooka.translationnexus.domain.entity.TranslationValueEntity existingVal = entity.getTranslations().get(locale);
+            if (existingVal != null && existingVal.getStatus() == TranslationStatusEnum.APPROVED) {
+                throw new GenericBusinessException("This key is marked as Complete. Approved translations cannot be modified by translators or reviewers.");
+            }
         }
 
         TranslationModel model = mapperService.toModel(entity);
@@ -170,6 +202,7 @@ public class TranslationService {
         log.info("Translation approved for key: {}, locale: {}, by user: {}", model.getKeyCode(), locale, username);
         meterRegistry.counter("translation_approvals_total", "locale", locale).increment();
 
+        updateAutomaticTags(updatedEntity);
         return translationRepository.save(updatedEntity);
     }
 
@@ -181,7 +214,7 @@ public class TranslationService {
         return entity.getHistory();
     }
 
-    public TranslationEntity updateStatus(String id, String locale, TranslationStatusEnum status, String username)
+    public TranslationEntity updateStatus(String id, String locale, TranslationStatusEnum status, String username, boolean isManagerOrAdmin)
             throws BusinessException {
         TranslationEntity entity = translationRepository.findById(id)
                 .orElseThrow(TranslationNotFoundException::new);
@@ -192,10 +225,20 @@ public class TranslationService {
             throw new VersionLockedException();
         }
 
+        // Rule: Complete check
+        boolean hasCompleteTag = entity.getTags() != null && entity.getTags().stream().anyMatch(t -> t.equalsIgnoreCase(SystemTags.COMPLETE));
+        if (hasCompleteTag && !isManagerOrAdmin) {
+            dev.mooka.translationnexus.domain.entity.TranslationValueEntity existingVal = entity.getTranslations().get(locale);
+            if (existingVal != null && existingVal.getStatus() == TranslationStatusEnum.APPROVED) {
+                throw new GenericBusinessException("This key is marked as Complete. Approved translations cannot be modified by translators or reviewers.");
+            }
+        }
+
         TranslationModel model = mapperService.toModel(entity);
         model.updateStatus(locale, status, username);
 
         TranslationEntity updatedEntity = mapperService.toEntity(model);
+        updateAutomaticTags(updatedEntity);
         return translationRepository.save(updatedEntity);
     }
 
@@ -239,17 +282,26 @@ public class TranslationService {
 
         // Query for documents in the active version where translations for the target locale
         // either don't exist, or have PENDING status, or have empty/blank translated value.
+        // We also exclude keys that have Skip or Obsolete tags.
         Criteria criteria = Criteria.where("version").is(version);
         Criteria pendingOrMissing = new Criteria().orOperator(
                 Criteria.where("translations." + locale).exists(false),
                 Criteria.where("translations." + locale + ".status").is(TranslationStatusEnum.PENDING),
                 Criteria.where("translations." + locale + ".translatedValue").is("")
         );
+        Criteria notLocked = new Criteria().orOperator(
+                Criteria.where("tags").exists(false),
+                Criteria.where("tags").nin(SystemTags.SKIP, SystemTags.OBSOLETE)
+        );
 
-        Query baseQuery = new Query().addCriteria(criteria).addCriteria(pendingOrMissing);
+        Query baseQuery = new Query();
+        baseQuery.addCriteria(criteria);
+        baseQuery.addCriteria(new Criteria().andOperator(pendingOrMissing, notLocked));
 
         // Find the maximum priority among the pending/missing translation documents
-        Query maxPriorityQuery = new Query().addCriteria(criteria).addCriteria(pendingOrMissing);
+        Query maxPriorityQuery = new Query();
+        maxPriorityQuery.addCriteria(criteria);
+        maxPriorityQuery.addCriteria(new Criteria().andOperator(pendingOrMissing, notLocked));
         maxPriorityQuery.with(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "priority"));
         maxPriorityQuery.limit(1);
         List<TranslationEntity> highest = mongoTemplate.find(maxPriorityQuery, TranslationEntity.class);
@@ -293,5 +345,94 @@ public class TranslationService {
 
         return Optional.empty();
     }
+
+    private void updateAutomaticTags(TranslationEntity entity) {
+        if (entity == null) return;
+        List<String> tags = entity.getTags();
+        if (tags == null) {
+            tags = new ArrayList<>();
+            entity.setTags(tags);
+        }
+
+        // Fetch all active locales
+        List<dev.mooka.translationnexus.domain.entity.LocaleEntity> localesList = localeService.getAllLocales();
+
+        boolean hasMissing = false;
+        for (dev.mooka.translationnexus.domain.entity.LocaleEntity loc : localesList) {
+            String localeId = loc.getId();
+            dev.mooka.translationnexus.domain.entity.TranslationValueEntity tv = entity.getTranslations().get(localeId);
+            if (tv == null || tv.getTranslatedValue() == null || tv.getTranslatedValue().trim().isEmpty()) {
+                hasMissing = true;
+                break;
+            }
+        }
+
+        // Remove existing "Missing Source" (case-insensitive)
+        tags.removeIf(t -> t.equalsIgnoreCase(SystemTags.MISSING_SOURCE));
+
+        if (hasMissing) {
+            tags.add(SystemTags.MISSING_SOURCE);
+        }
+    }
+
+    public TranslationEntity updateBaseValue(String id, String newBaseValue) throws BusinessException {
+        TranslationEntity entity = translationRepository.findById(id)
+                .orElseThrow(TranslationNotFoundException::new);
+        
+        AppVersionEntity activeVersion = versionService.getActiveVersion()
+                .orElseThrow(() -> new GenericBusinessException("No active version configured."));
+        if (!entity.getVersion().equals(activeVersion.getVersion())) {
+            throw new VersionLockedException();
+        }
+
+        String oldBase = entity.getBaseValue();
+        if (newBaseValue != null && !newBaseValue.equals(oldBase)) {
+            entity.setBaseValue(newBaseValue);
+            
+            // Add "Source Changed" tag if not already present
+            List<String> tags = entity.getTags();
+            if (tags == null) {
+                tags = new ArrayList<>();
+                entity.setTags(tags);
+            }
+            if (tags.stream().noneMatch(t -> t.equalsIgnoreCase(SystemTags.SOURCE_CHANGED))) {
+                tags.add(SystemTags.SOURCE_CHANGED);
+            }
+            
+            entity.setUpdatedAt(Instant.now());
+            
+            // Recalculate "Missing Source"
+            updateAutomaticTags(entity);
+            
+            return translationRepository.save(entity);
+        }
+        
+        return entity;
+    }
+
+    public TranslationEntity updateTags(String id, List<String> newTags) throws BusinessException {
+        TranslationEntity entity = translationRepository.findById(id)
+                .orElseThrow(TranslationNotFoundException::new);
+        
+        AppVersionEntity activeVersion = versionService.getActiveVersion()
+                .orElseThrow(() -> new GenericBusinessException("No active version configured."));
+        if (!entity.getVersion().equals(activeVersion.getVersion())) {
+            throw new VersionLockedException();
+        }
+
+        List<String> cleanTags = new ArrayList<>();
+        if (newTags != null) {
+            for (String t : newTags) {
+                if (t != null && !t.trim().isEmpty()) {
+                    cleanTags.add(t.trim());
+                }
+            }
+        }
+
+        entity.setTags(cleanTags);
+        updateAutomaticTags(entity);
+        entity.setUpdatedAt(Instant.now());
+
+        return translationRepository.save(entity);
+    }
 }
-// Force compilation comment

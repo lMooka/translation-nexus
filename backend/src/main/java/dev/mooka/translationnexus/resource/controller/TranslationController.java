@@ -23,6 +23,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -98,14 +99,17 @@ public class TranslationController {
         boolean isReviewer = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals(Roles.ROLE_REVIEWER));
 
-        boolean isAuthorizedForLocale = isReviewer || authentication.getAuthorities().stream()
+        boolean isManagerOrAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals(Roles.ROLE_MANAGER) || a.getAuthority().equals(Roles.ROLE_ADMIN));
+
+        boolean isAuthorizedForLocale = isReviewer || isManagerOrAdmin || authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals(Roles.ROLE_TRANSLATOR + "_" + locale.toUpperCase()));
 
         if (!isAuthorizedForLocale) {
             throw new NoPermissionException();
         }
 
-        TranslationEntity updated = translationService.updateTranslation(id, locale, dto, username, isReviewer);
+        TranslationEntity updated = translationService.updateTranslation(id, locale, dto, username, isReviewer, isManagerOrAdmin);
         return ResponseEntity.ok(mapperService.toDTO(updated));
     }
 
@@ -137,7 +141,10 @@ public class TranslationController {
             Authentication authentication) throws BusinessException {
 
         String username = (String) authentication.getPrincipal();
-        TranslationEntity approved = translationService.approveTranslation(id, locale, username);
+        boolean isManagerOrAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals(Roles.ROLE_MANAGER) || a.getAuthority().equals(Roles.ROLE_ADMIN));
+
+        TranslationEntity approved = translationService.approveTranslation(id, locale, username, isManagerOrAdmin);
         return ResponseEntity.ok(mapperService.toDTO(approved));
     }
 
@@ -171,11 +178,14 @@ public class TranslationController {
             Authentication authentication) throws BusinessException {
         boolean isReviewer = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals(Roles.ROLE_REVIEWER));
-        if (!isReviewer) {
+        boolean isManagerOrAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals(Roles.ROLE_MANAGER) || a.getAuthority().equals(Roles.ROLE_ADMIN));
+
+        if (!isReviewer && !isManagerOrAdmin) {
             throw new NoPermissionException();
         }
         String username = (String) authentication.getPrincipal();
-        TranslationEntity updated = translationService.updateStatus(id, locale, status, username);
+        TranslationEntity updated = translationService.updateStatus(id, locale, status, username, isManagerOrAdmin);
         return ResponseEntity.ok(mapperService.toDTO(updated));
     }
 
@@ -243,5 +253,25 @@ public class TranslationController {
                 .map(mapperService::toDTO)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.noContent().build());
+    }
+
+    @PutMapping("/{id}/base")
+    @PreAuthorize("hasRole('ROLE_MANAGER') or hasRole('ROLE_ADMIN')")
+    @Operation(summary = "Update translation base value. MANAGER/ADMIN only.")
+    public ResponseEntity<TranslationDocumentDTO> updateBaseValue(
+            @PathVariable String id,
+            @RequestParam String baseValue) throws BusinessException {
+        TranslationEntity updated = translationService.updateBaseValue(id, baseValue);
+        return ResponseEntity.ok(mapperService.toDTO(updated));
+    }
+
+    @PutMapping("/{id}/tags")
+    @PreAuthorize("hasRole('ROLE_MANAGER') or hasRole('ROLE_ADMIN')")
+    @Operation(summary = "Update translation tags. MANAGER/ADMIN only.")
+    public ResponseEntity<TranslationDocumentDTO> updateTags(
+            @PathVariable String id,
+            @RequestBody List<String> tags) throws BusinessException {
+        TranslationEntity updated = translationService.updateTags(id, tags);
+        return ResponseEntity.ok(mapperService.toDTO(updated));
     }
 }

@@ -32,6 +32,12 @@ export class TranslationListComponent implements OnInit {
   translating: Record<string, boolean> = {};
   errors: Record<string, string> = {};
 
+  // Tag and Base Value edit states for Managers
+  editingTagsDocId: string | null = null;
+  tagsDraft = '';
+  editingBaseDocId: string | null = null;
+  baseDraft = '';
+
   // New key modal
   showNewKeyModal = false;
   newKeyCategoryName = '';
@@ -188,6 +194,21 @@ export class TranslationListComponent implements OnInit {
   }
 
   isEditable(doc: TranslationDocument, locale: string): boolean {
+    const isPowerUser = this.auth.isReviewer() || this.auth.isManager() || this.auth.isAdmin();
+    
+    // Skip / Obsolete lock
+    const hasSkipOrObsolete = doc.tags && doc.tags.some(t => t.toLowerCase() === 'skip' || t.toLowerCase() === 'obsolete');
+    if (hasSkipOrObsolete && !isPowerUser) {
+      return false;
+    }
+
+    // Complete lock
+    const hasComplete = doc.tags && doc.tags.some(t => t.toLowerCase() === 'complete');
+    const isApproved = this.statusOf(doc, locale) === 'APPROVED';
+    if (hasComplete && isApproved && !this.auth.isManager()) {
+      return false;
+    }
+
     return this.statusOf(doc, locale) === 'PENDING';
   }
 
@@ -434,6 +455,56 @@ export class TranslationListComponent implements OnInit {
       error: err => {
         this.errors[key] = err.error?.message || err.message || 'Translation failed';
         this.translating[key] = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  startEditBase(doc: TranslationDocument) {
+    this.editingBaseDocId = doc.id;
+    this.baseDraft = doc.baseValue || '';
+  }
+
+  saveBaseValue(doc: TranslationDocument) {
+    if (this.baseDraft === doc.baseValue) {
+      this.editingBaseDocId = null;
+      return;
+    }
+    this.loading = true;
+    this.api.updateBaseValue(doc.id, this.baseDraft).subscribe({
+      next: updated => {
+        doc.baseValue = updated.baseValue;
+        doc.tags = updated.tags;
+        this.editingBaseDocId = null;
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: err => {
+        alert(err.error?.message || err.message || 'Error updating base value');
+        this.loading = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  startEditTags(doc: TranslationDocument) {
+    this.editingTagsDocId = doc.id;
+    this.tagsDraft = doc.tags ? doc.tags.join(', ') : '';
+  }
+
+  saveTags(doc: TranslationDocument) {
+    const list = this.tagsDraft.split(',').map(t => t.trim()).filter(Boolean);
+    this.loading = true;
+    this.api.updateTags(doc.id, list).subscribe({
+      next: updated => {
+        doc.tags = updated.tags;
+        this.editingTagsDocId = null;
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: err => {
+        alert(err.error?.message || err.message || 'Error updating tags');
+        this.loading = false;
         this.cdr.detectChanges();
       }
     });
