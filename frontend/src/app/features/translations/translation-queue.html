@@ -1,0 +1,129 @@
+<div class="queue-container">
+  <header class="page-header">
+    <div class="header-title-wrapper">
+      <span class="header-icon">📥</span>
+      <div>
+        <h1>Translation Queue</h1>
+        <p class="subtitle">Translate keys sequentially prioritized by importance. Focus on one translation at a time.</p>
+      </div>
+    </div>
+
+    <div class="language-selector-wrapper">
+      <label for="locale-select">Target Language:</label>
+      <select id="locale-select" [(ngModel)]="selectedLocale" (change)="onLocaleChange()" class="premium-select">
+        <option value="" disabled>Select language...</option>
+        <option *ngFor="let locale of authorizedLocales" [value]="locale.id">
+          {{ locale.name }} ({{ locale.id.toUpperCase() }})
+        </option>
+      </select>
+    </div>
+  </header>
+
+  <div *ngIf="errorMessage" class="alert error-alert animate-fade-in">
+    <span class="alert-icon">⚠️</span>
+    <span class="alert-message">{{ errorMessage }}</span>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading && !saving && !translating" class="loader-container">
+    <div class="spinner"></div>
+    <p>Loading next translation key...</p>
+  </div>
+
+  <!-- Main Content Card -->
+  <div *ngIf="!loading && currentDoc" class="translation-card animate-slide-up">
+    <div class="card-header">
+      <div class="metadata-tags">
+        <span class="badge category-badge">
+          <span class="badge-dot"></span>
+          {{ currentDoc.category }}
+        </span>
+        <span *ngIf="currentDoc.priority" class="badge priority-badge" [attr.data-priority]="currentDoc.priority">
+          Priority P{{ currentDoc.priority }}
+        </span>
+        <span class="badge status-badge" [attr.data-status]="statusOf()">
+          {{ statusOf() }}
+        </span>
+      </div>
+      <div class="keycode-display">
+        <span class="key-label">Key Code</span>
+        <code class="key-code">{{ currentDoc.keyCode }}</code>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <!-- Base Value (English) -->
+      <div class="section-group">
+        <div class="section-title">
+          <span>Source text (English)</span>
+        </div>
+        <div class="base-value-box">
+          {{ currentDoc.baseValue }}
+        </div>
+      </div>
+
+      <!-- Context Info -->
+      <div *ngIf="currentDoc.contextInfo" class="section-group context-group">
+        <div class="section-title">
+          <span>Context & Instructions</span>
+        </div>
+        <p class="context-text">{{ currentDoc.contextInfo }}</p>
+      </div>
+
+      <!-- Tags -->
+      <div *ngIf="currentDoc.tags && currentDoc.tags.length > 0" class="section-group tags-group">
+        <div class="tags-list">
+          <span *ngFor="let tag of currentDoc.tags" class="tag-item">#{{ tag }}</span>
+        </div>
+      </div>
+
+      <!-- Translation Input -->
+      <div class="section-group input-group">
+        <div class="section-title">
+          <label for="translation-input">Your Translation ({{ selectedLocale.toUpperCase() }})</label>
+          <button (click)="autoTranslate()" class="btn-secondary btn-sparkle" [disabled]="translating || saving">
+            <span class="sparkle-icon">✨</span>
+            {{ translating ? 'Translating...' : 'Auto-Translate' }}
+          </button>
+        </div>
+        <textarea
+          id="translation-input"
+          [(ngModel)]="draftValue"
+          placeholder="Type your translation here..."
+          class="premium-textarea"
+          rows="4"
+          [disabled]="saving"
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="card-footer">
+      <button (click)="skip()" class="btn-outline" [disabled]="saving || loading">
+        <span>Skip key</span>
+        <span class="btn-arrow">→</span>
+      </button>
+
+      <button (click)="save()" class="btn-primary" [disabled]="saving || !draftValue.trim()">
+        <span *ngIf="saving" class="btn-spinner"></span>
+        {{ saving ? 'Saving...' : 'Save & Next' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Empty / Done State -->
+  <div *ngIf="!loading && !currentDoc && infoMessage" class="done-card animate-scale-up">
+    <div class="done-icon">🎉</div>
+    <h2>All Done!</h2>
+    <p>{{ infoMessage }}</p>
+    <button (click)="loadRandom()" class="btn-primary btn-centered">
+      <span>Check again</span>
+    </button>
+  </div>
+
+  <!-- Unselected language fallback -->
+  <div *ngIf="!selectedLocale && !loading" class="empty-state-card animate-fade-in">
+    <div class="empty-icon">🌍</div>
+    <h2>No language selected</h2>
+    <p>Please select a target language from the header to start translating.</p>
+  </div>
+</div>

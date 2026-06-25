@@ -220,4 +220,28 @@ public class TranslationController {
         String result = googleTranslateService.translate(dto.text(), targetLang);
         return ResponseEntity.ok(new TranslateResponseDTO(result));
     }
+
+    @GetMapping("/random")
+    @Operation(summary = "Get a random translation document requiring translation for a locale", description = "Retrieves a random translation document that either lacks a value for the target locale or has its status as PENDING.")
+    public ResponseEntity<TranslationDocumentDTO> getRandom(
+            @Parameter(description = "Locale identifier (e.g. pt, en)") @RequestParam String locale,
+            Authentication authentication) throws BusinessException {
+        
+        boolean isReviewer = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals(Roles.ROLE_REVIEWER)
+                            || a.getAuthority().equals(Roles.ROLE_MANAGER)
+                            || a.getAuthority().equals(Roles.ROLE_ADMIN));
+
+        boolean isAuthorizedForLocale = isReviewer || authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals(Roles.ROLE_TRANSLATOR + "_" + locale.toUpperCase()));
+
+        if (!isAuthorizedForLocale) {
+            throw new NoPermissionException();
+        }
+
+        return translationService.findRandom(locale)
+                .map(mapperService::toDTO)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.noContent().build());
+    }
 }

@@ -5,6 +5,7 @@
   </div>
   <div class="nav-links">
     <a routerLink="/translations" routerLinkActive="active">Translations</a>
+    <a routerLink="/translation-queue" routerLinkActive="active">Translation Queue</a>
     <a routerLink="/review" routerLinkActive="active" *ngIf="auth.isReviewer()">Review Queue</a>
     <a routerLink="/categories" routerLinkActive="active" *ngIf="auth.isManager()">Categories</a>
     <a routerLink="/languages" routerLinkActive="active" *ngIf="auth.isManager()">Languages</a>

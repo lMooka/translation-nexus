@@ -231,4 +231,67 @@ public class TranslationService {
         translationRepository.delete(entity);
         log.info("Translation key deleted: {}", entity.getKeyCode());
     }
+
+    public Optional<TranslationEntity> findRandom(String locale) throws BusinessException {
+        AppVersionEntity activeVersion = versionService.getActiveVersion()
+                .orElseThrow(() -> new GenericBusinessException("No active version configured."));
+        String version = activeVersion.getVersion();
+
+        // Query for documents in the active version where translations for the target locale
+        // either don't exist, or have PENDING status, or have empty/blank translated value.
+        Criteria criteria = Criteria.where("version").is(version);
+        Criteria pendingOrMissing = new Criteria().orOperator(
+                Criteria.where("translations." + locale).exists(false),
+                Criteria.where("translations." + locale + ".status").is(TranslationStatusEnum.PENDING),
+                Criteria.where("translations." + locale + ".translatedValue").is("")
+        );
+
+        Query baseQuery = new Query().addCriteria(criteria).addCriteria(pendingOrMissing);
+
+        // Find the maximum priority among the pending/missing translation documents
+        Query maxPriorityQuery = new Query().addCriteria(criteria).addCriteria(pendingOrMissing);
+        maxPriorityQuery.with(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "priority"));
+        maxPriorityQuery.limit(1);
+        List<TranslationEntity> highest = mongoTemplate.find(maxPriorityQuery, TranslationEntity.class);
+
+        if (!highest.isEmpty()) {
+            int maxPriority = highest.get(0).getPriority() != null ? highest.get(0).getPriority() : 3;
+            baseQuery.addCriteria(Criteria.where("priority").is(maxPriority));
+
+            long count = mongoTemplate.count(baseQuery, TranslationEntity.class);
+            if (count > 0) {
+                int randomIdx = new Random().nextInt((int) count);
+                baseQuery.limit(1).skip(randomIdx);
+                List<TranslationEntity> list = mongoTemplate.find(baseQuery, TranslationEntity.class);
+                if (!list.isEmpty()) {
+                    return Optional.of(list.get(0));
+                }
+            }
+        }
+
+        // Fallback: Pick ANY translation in the active version if no pending ones are left,
+        // prioritizing by priority descending, but selecting randomly among the highest priority ones.
+        Query fallbackMaxQuery = new Query().addCriteria(Criteria.where("version").is(version));
+        fallbackMaxQuery.with(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "priority"));
+        fallbackMaxQuery.limit(1);
+        List<TranslationEntity> fallbackHighest = mongoTemplate.find(fallbackMaxQuery, TranslationEntity.class);
+
+        if (!fallbackHighest.isEmpty()) {
+            int maxPriority = fallbackHighest.get(0).getPriority() != null ? fallbackHighest.get(0).getPriority() : 3;
+            Query fallbackQuery = new Query().addCriteria(Criteria.where("version").is(version))
+                    .addCriteria(Criteria.where("priority").is(maxPriority));
+            long totalCount = mongoTemplate.count(fallbackQuery, TranslationEntity.class);
+            if (totalCount > 0) {
+                int randomIdx = new Random().nextInt((int) totalCount);
+                fallbackQuery.limit(1).skip(randomIdx);
+                List<TranslationEntity> list = mongoTemplate.find(fallbackQuery, TranslationEntity.class);
+                if (!list.isEmpty()) {
+                    return Optional.of(list.get(0));
+                }
+            }
+        }
+
+        return Optional.empty();
+    }
 }
+// Force compilation comment

@@ -16,6 +16,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/translations/translation-list').then(m => m.TranslationListComponent)
   },
   {
+    path: 'translation-queue',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/translations/translation-queue').then(m => m.TranslationQueueComponent)
+  },
+  {
     path: 'review',
     canActivate: [authGuard, reviewerGuard],
     loadComponent: () => import('./features/review/review-queue').then(m => m.ReviewQueueComponent)
